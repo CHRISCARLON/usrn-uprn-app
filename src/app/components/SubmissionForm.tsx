@@ -49,7 +49,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
 
         setTimeout(() => {
           setSubmitMessage(null);
-        }, 1000);
+        }, 2500);
 
         setFormData({
           datasetName: "",
