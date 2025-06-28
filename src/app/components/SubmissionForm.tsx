@@ -1,27 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { SubmissionData } from "@/lib/validation";
 
-export interface FormData {
-  datasetName: string;
-  datasetUrl: string;
-  datasetOwner:
-    | "Public Sector"
-    | "Private Sector"
-    | "Academic/Research"
-    | "Non-profit"
-    | "Other";
-  ownerName: string;
-  description: string;
-  missingType: "Both" | "USRN" | "UPRN";
-  jobTitle: string;
-  sector:
-    | "Public Sector"
-    | "Private Sector"
-    | "Academic/Research"
-    | "Non-profit"
-    | "Other";
-}
+export type FormData = SubmissionData;
 
 interface SubmissionFormProps {
   onSubmit?: (data: FormData) => void;
@@ -34,7 +16,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
     datasetOwner: "Public Sector",
     ownerName: "",
     description: "",
-    missingType: "Both",
+    missingType: "USRN",
     jobTitle: "",
     sector: "Public Sector",
   });
@@ -122,7 +104,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
   return (
     <section className="border-2 border-slate-300 bg-white shadow-lg rounded-sm">
       <div className="bg-slate-700 text-white p-6">
-        <h2 className="text-3xl font-black tracking-wide text-white">
+        <h2 className="text-xl font-bold tracking-wide text-white">
           Submit a Report
         </h2>
       </div>
@@ -144,7 +126,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Dataset Basic Information */}
           <div className="space-y-6">
-            <h3 className="text-lg font-black uppercase tracking-wide text-slate-900 border-b-2 border-slate-200 pb-2">
+            <h3 className="text-base font-bold uppercase tracking-wide text-slate-900 border-b-2 border-slate-200 pb-2">
               Dataset Information
             </h3>
 
@@ -152,7 +134,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
               <div>
                 <label
                   htmlFor="datasetName"
-                  className="block text-sm font-black mb-3 uppercase tracking-wide text-slate-900"
+                  className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-900"
                 >
                   Dataset Name *
                 </label>
@@ -164,7 +146,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                   onChange={handleChange}
                   required
                   disabled={isSubmitting}
-                  className="w-full p-4 border-2 border-slate-300 text-base font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
+                  className="w-full p-3 border-2 border-slate-300 text-sm font-medium focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
                   placeholder="e.g. NapTAN Data"
                 />
               </div>
@@ -172,7 +154,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
               <div>
                 <label
                   htmlFor="datasetUrl"
-                  className="block text-sm font-black mb-3 uppercase tracking-wide text-slate-900"
+                  className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-900"
                 >
                   Dataset URL *
                 </label>
@@ -184,7 +166,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                   onChange={handleChange}
                   required
                   disabled={isSubmitting}
-                  className="w-full p-4 border-2 border-slate-300 text-base font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
+                  className="w-full p-3 border-2 border-slate-300 text-sm font-medium focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
                   placeholder="https://data.gov.uk/dataset/..."
                 />
               </div>
@@ -194,7 +176,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
               <div>
                 <label
                   htmlFor="ownerName"
-                  className="block text-sm font-black mb-3 uppercase tracking-wide text-slate-900"
+                  className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-900"
                 >
                   Owner Name *
                 </label>
@@ -206,7 +188,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                   onChange={handleChange}
                   required
                   disabled={isSubmitting}
-                  className="w-full p-4 border-2 border-slate-300 text-base font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
+                  className="w-full p-3 border-2 border-slate-300 text-sm font-medium focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
                   placeholder="e.g. Department for Transport, Ordnance Survey"
                 />
               </div>
@@ -214,7 +196,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
               <div>
                 <label
                   htmlFor="datasetOwner"
-                  className="block text-sm font-black mb-3 uppercase tracking-wide text-slate-900"
+                  className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-900"
                 >
                   Owner Type *
                 </label>
@@ -225,7 +207,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                   onChange={handleChange}
                   required
                   disabled={isSubmitting}
-                  className="w-full p-4 border-2 border-slate-300 text-base font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
+                  className="w-full p-3 border-2 border-slate-300 text-sm font-medium focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
                 >
                   <option value="Public Sector">Public Sector</option>
                   <option value="Private Sector">Private Sector</option>
@@ -239,14 +221,14 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
 
           {/* Missing Identifiers */}
           <div className="space-y-6">
-            <h3 className="text-lg font-black uppercase tracking-wide text-slate-900 border-b-2 border-slate-200 pb-2">
+            <h3 className="text-base font-bold uppercase tracking-wide text-slate-900 border-b-2 border-slate-200 pb-2">
               Identifier Information
             </h3>
 
             <div>
               <label
                 htmlFor="missingType"
-                className="block text-sm font-black mb-3 uppercase tracking-wide text-slate-900"
+                className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-900"
               >
                 What identifiers should be added? *
               </label>
@@ -257,18 +239,18 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                 onChange={handleChange}
                 required
                 disabled={isSubmitting}
-                className="w-full p-4 border-2 border-slate-300 text-base font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white max-w-md disabled:opacity-50"
+                className="w-full p-4 border-2 border-slate-300 text-sm font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white max-w-md disabled:opacity-50"
               >
-                <option value="both">Both USRN and UPRN</option>
-                <option value="usrn">USRN only</option>
-                <option value="uprn">UPRN only</option>
+                <option value="Both">Both USRN and UPRN</option>
+                <option value="USRN">USRN only</option>
+                <option value="UPRN">UPRN only</option>
               </select>
             </div>
 
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-black mb-3 uppercase tracking-wide text-slate-900"
+                className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-900"
               >
                 Description * ({formData.description.length}/500)
               </label>
@@ -281,7 +263,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                 required
                 disabled={isSubmitting}
                 rows={5}
-                className="w-full p-4 border-2 border-slate-300 text-base font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 resize-none transition-all duration-200 hover:bg-white disabled:opacity-50"
+                className="w-full p-3 border-2 border-slate-300 text-sm font-medium focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 resize-none transition-all duration-200 hover:bg-white disabled:opacity-50"
                 placeholder="Please describe the dataset and explain why you believe it should include USRNs and/or UPRNs. Include any relevant context about the data's purpose and current limitations."
               />
             </div>
@@ -289,7 +271,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
 
           {/* Professional Information */}
           <div className="space-y-6">
-            <h3 className="text-lg font-black uppercase tracking-wide text-slate-900 border-b-2 border-slate-200 pb-2">
+            <h3 className="text-base font-bold uppercase tracking-wide text-slate-900 border-b-2 border-slate-200 pb-2">
               Professional Information
             </h3>
 
@@ -297,7 +279,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
               <div>
                 <label
                   htmlFor="jobTitle"
-                  className="block text-sm font-black mb-3 uppercase tracking-wide text-slate-900"
+                  className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-900"
                 >
                   Job Title (Optional)
                 </label>
@@ -308,7 +290,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                   value={formData.jobTitle}
                   onChange={handleChange}
                   disabled={isSubmitting}
-                  className="w-full p-4 border-2 border-slate-300 text-base font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
+                  className="w-full p-3 border-2 border-slate-300 text-sm font-medium focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
                   placeholder="e.g., Data Analyst, GIS Specialist"
                 />
               </div>
@@ -316,7 +298,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
               <div>
                 <label
                   htmlFor="sector"
-                  className="block text-sm font-black mb-3 uppercase tracking-wide text-slate-900"
+                  className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-900"
                 >
                   Sector (Optional)
                 </label>
@@ -326,13 +308,13 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                   value={formData.sector}
                   onChange={handleChange}
                   disabled={isSubmitting}
-                  className="w-full p-4 border-2 border-slate-300 text-base font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
+                  className="w-full p-4 border-2 border-slate-300 text-sm font-semibold focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
                 >
-                  <option value="public">Public Sector</option>
-                  <option value="private">Private Sector</option>
-                  <option value="academic">Academic/Research</option>
-                  <option value="nonprofit">Non-profit</option>
-                  <option value="other">Other</option>
+                  <option value="Public Sector">Public Sector</option>
+                  <option value="Private Sector">Private Sector</option>
+                  <option value="Academic/Research">Academic/Research</option>
+                  <option value="Non-profit">Non-profit</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
             </div>
@@ -343,7 +325,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
             <button
               type="submit"
               disabled={!isFormValid || isSubmitting}
-              className={`px-8 py-4 text-lg font-black uppercase tracking-wide border-2 transition-all duration-200 shadow-sm hover:shadow-md text-white disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`px-6 py-3 text-sm font-bold uppercase tracking-wide border-2 transition-all duration-200 shadow-sm hover:shadow-md text-white disabled:opacity-50 disabled:cursor-not-allowed ${
                 isFormValid && !isSubmitting
                   ? "bg-green-600 border-green-600 hover:bg-green-700 hover:border-green-700"
                   : "bg-slate-700 border-slate-700 hover:bg-slate-800 hover:border-slate-800"

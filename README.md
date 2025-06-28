@@ -10,6 +10,4 @@ This is a simple Next.js app that allows users to report datasets that are missi
 
 ## To Do
 
-- Set up Turso DB
-- Set up Turso DB with Drizzle ORM
 - Deploy to Vercel

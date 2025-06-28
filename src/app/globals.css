@@ -27,8 +27,7 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+  outline: none;
 }
 
 button:active {

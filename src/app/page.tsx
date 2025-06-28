@@ -2,13 +2,11 @@
 
 import Header from "./components/Header";
 import InfoCards from "./components/InfoCards";
-import SubmissionForm, { FormData } from "./components/SubmissionForm";
+import SubmissionForm from "./components/SubmissionForm";
 import InfoCard2 from "./components/InfoCard2";
 
 export default function Home() {
-  const handleFormSubmit = (data: FormData) => {
-    // TODO: Handle form submissionn with a backend service
-    console.log("Form submitted:", data);
+  const handleFormSubmit = () => {
     alert("Thank you for your submission! We'll review the dataset.");
   };
 
@@ -16,12 +14,12 @@ export default function Home() {
     {
       title: "USRN",
       description:
-        "Unique Street Reference Number - A unique identifier for every street, road, and thoroughfare in Great Britain.",
+        "The Unique Street Reference Number (USRN) is an 8 digit unique identifier for every street across Great Britain.",
     },
     {
       title: "UPRN",
       description:
-        "Unique Property Reference Number - A unique identifier for every addressable location in Great Britain.",
+        "The Unique Property Reference Number (UPRN) is a unique identifier for every addressable location in Great Britain.",
     },
   ];
 
@@ -37,7 +35,7 @@ export default function Home() {
       {/* Sticky info banner */}
       <div className="bg-slate-100 border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-3">
-          <p className="text-sm text-slate-600 leading-relaxed text-center">
+          <p className="text-xs text-slate-600 leading-relaxed text-center">
             <strong>Note:</strong> It&apos;s been around 5 years since{" "}
             <a
               href="https://www.geoplace.co.uk/addresses-streets/location-data/usrn"
@@ -70,7 +68,7 @@ export default function Home() {
       </div>
 
       <Header
-        title="404: Linked Identifier Not Found"
+        title="404: USRN and/or UPRN Not Found"
         subtitle="Report datasets that are missing Unique Street Reference Numbers (USRN) or Unique Property Reference Numbers (UPRN) to help improve UK location data infrastructure."
       />
 

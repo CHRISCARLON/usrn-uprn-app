@@ -1,50 +1,92 @@
-import { Client } from "pg";
+import { DuckDBInstance } from "@duckdb/node-api";
 import { NextRequest, NextResponse } from "next/server";
+import { submissionSchema } from "@/lib/validation";
+
+let requestCount = 0;
+let windowStart = Date.now();
+
+function rateLimit(maxRequests = 150, windowMs = 30 * 60 * 1000): boolean {
+  const now = Date.now();
+
+  // Reset window if expired
+  if (now - windowStart >= windowMs) {
+    console.log("Rate limit window reset");
+    requestCount = 0;
+    windowStart = now;
+  }
+
+  if (requestCount >= maxRequests) {
+    console.log("Rate limit exceeded!");
+    return false;
+  }
+
+  requestCount++;
+  return true;
+}
 
 export async function POST(request: NextRequest) {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: false, // Disable SSL for local development
-  });
+  // Check rate limit first - 150 requests per 30 minutes
+  if (!rateLimit(150, 30 * 60 * 1000)) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Too many requests. Please try again later.",
+      },
+      { status: 429 }
+    );
+  }
 
   try {
-    const formData = await request.json();
-    await client.connect();
+    const body = await request.json();
+    const validationResult = submissionSchema.safeParse(body);
 
-    const query = `
-      INSERT INTO submissions (
-        dataset_name, dataset_url, dataset_owner, owner_name, 
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid data provided",
+        },
+        { status: 400 }
+      );
+    }
+
+    const formData = validationResult.data;
+
+    // Connect to MotherDuck
+    const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
+    const instance = await DuckDBInstance.create(connectionString);
+    const connection = await instance.connect();
+
+    // Insert data
+    await connection.run(
+      `
+      INSERT INTO usrn_uprn_reports.submissions (
+        dataset_name, dataset_url, dataset_owner, owner_name,
         description, missing_type, job_title, sector
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, created_at
-    `;
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      [
+        formData.datasetName,
+        formData.datasetUrl,
+        formData.datasetOwner,
+        formData.ownerName,
+        formData.description,
+        formData.missingType.toLowerCase(),
+        formData.jobTitle || null,
+        formData.sector,
+      ]
+    );
 
-    const values = [
-      formData.datasetName,
-      formData.datasetUrl,
-      formData.datasetOwner,
-      formData.ownerName,
-      formData.description,
-      formData.missingType.toLowerCase(),
-      formData.jobTitle || null,
-      formData.sector,
-    ];
-
-    const result = await client.query(query, values);
+    connection.closeSync();
 
     return NextResponse.json({
       success: true,
       message: "Report submitted successfully!",
-      id: result.rows[0].id,
-      createdAt: result.rows[0].created_at,
     });
-  } catch (error) {
-    console.error("Database error:", error);
+  } catch {
     return NextResponse.json(
       { success: false, message: "Failed to submit report" },
       { status: 500 }
     );
-  } finally {
-    await client.end();
   }
 }
