@@ -52,6 +52,12 @@ export async function POST(request: NextRequest) {
 
     const formData = validationResult.data;
 
+    // Quick env check
+    console.log("Env vars exist:", {
+      MOTHERDUCK_DB: !!process.env.MOTHERDUCK_DB,
+      MOTHERDUCK_TOKEN: !!process.env.MOTHERDUCK_TOKEN,
+    });
+
     // Connect to MotherDuck
     const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
     const instance = await DuckDBInstance.create(connectionString);
@@ -83,7 +89,19 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Report submitted successfully!",
     });
-  } catch {
+  } catch (error) {
+    // Simple error logging
+    console.error("❌ Form submission error:");
+    console.error("Error:", error);
+    console.error(
+      "Error message:",
+      error instanceof Error ? error.message : String(error)
+    );
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack trace"
+    );
+
     return NextResponse.json(
       { success: false, message: "Failed to submit report" },
       { status: 500 }
