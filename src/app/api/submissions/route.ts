@@ -4,11 +4,21 @@ import { submissionSchema } from "@/lib/validation";
 
 let requestCount = 0;
 let windowStart = Date.now();
+let cachedInstance: DuckDBInstance | null = null;
+
+async function getDuckDBInstance() {
+  if (!cachedInstance) {
+    process.env.HOME = "/tmp";
+
+    const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
+    cachedInstance = await DuckDBInstance.create(connectionString);
+  }
+  return cachedInstance;
+}
 
 function rateLimit(maxRequests = 150, windowMs = 30 * 60 * 1000): boolean {
   const now = Date.now();
 
-  // Reset window if expired
   if (now - windowStart >= windowMs) {
     console.log("Rate limit window reset");
     requestCount = 0;
@@ -52,9 +62,8 @@ export async function POST(request: NextRequest) {
 
     const formData = validationResult.data;
 
-    // Connect to MotherDuck
-    const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
-    const instance = await DuckDBInstance.create(connectionString);
+    // Get cached instance (home directory already configured)
+    const instance = await getDuckDBInstance();
     const connection = await instance.connect();
 
     // Insert data
@@ -83,7 +92,9 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Report submitted successfully!",
     });
-  } catch {
+  } catch (error) {
+    console.error("Form submission failed:", error);
+
     return NextResponse.json(
       { success: false, message: "Failed to submit report" },
       { status: 500 }
