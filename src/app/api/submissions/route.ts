@@ -8,8 +8,6 @@ let cachedInstance: DuckDBInstance | null = null;
 
 async function getDuckDBInstance() {
   if (!cachedInstance) {
-    console.log("Creating and configuring DuckDB instance...");
-
     process.env.HOME = "/tmp";
 
     const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
