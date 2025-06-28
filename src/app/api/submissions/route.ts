@@ -5,6 +5,23 @@ import { submissionSchema } from "@/lib/validation";
 let requestCount = 0;
 let windowStart = Date.now();
 
+// Cache DuckDB instance
+let cachedInstance: DuckDBInstance | null = null;
+
+async function getDuckDBInstance() {
+  if (!cachedInstance) {
+    console.log("Creating and configuring DuckDB instance...");
+    const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
+    cachedInstance = await DuckDBInstance.create(connectionString);
+
+    // Set home directory once when instance is created
+    const tempConnection = await cachedInstance.connect();
+    await tempConnection.run("SET home_directory='/tmp'");
+    tempConnection.closeSync();
+  }
+  return cachedInstance;
+}
+
 function rateLimit(maxRequests = 150, windowMs = 30 * 60 * 1000): boolean {
   const now = Date.now();
 
@@ -58,9 +75,8 @@ export async function POST(request: NextRequest) {
       MOTHERDUCK_TOKEN: !!process.env.MOTHERDUCK_TOKEN,
     });
 
-    // Connect to MotherDuck
-    const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
-    const instance = await DuckDBInstance.create(connectionString);
+    // Get cached instance (home directory already configured)
+    const instance = await getDuckDBInstance();
     const connection = await instance.connect();
 
     // Insert data
