@@ -69,7 +69,7 @@ export default function Home() {
 
       <Header
         title="404: USRN and/or UPRN Not Found"
-        subtitle="Report datasets that are missing Unique Street Reference Numbers (USRN) or Unique Property Reference Numbers (UPRN) to help improve UK location data infrastructure."
+        subtitle="Report datasets that are missing Unique Street Reference Numbers (USRN) or Unique Property Reference Numbers (UPRN) to help improve location data."
       />
 
       <main className="max-w-5xl mx-auto px-6 py-16">
@@ -79,7 +79,7 @@ export default function Home() {
 
         <InfoCard2
           title="Why does this matter?"
-          description="USRNs and UPRNs form the backbone of UK location data infrastructure and enable:"
+          description="USRNs and UPRNs are integral to location data and enable:"
           benefits={benefits}
           conclusion="By reporting datasets that should include these identifiers, you contribute to better public services and more effective use of government data."
         />
