@@ -11,13 +11,12 @@ let cachedInstance: DuckDBInstance | null = null;
 async function getDuckDBInstance() {
   if (!cachedInstance) {
     console.log("Creating and configuring DuckDB instance...");
+
+    // Set home directory in process environment before creating instance
+    process.env.HOME = "/tmp";
+
     const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
     cachedInstance = await DuckDBInstance.create(connectionString);
-
-    // Set home directory once when instance is created
-    const tempConnection = await cachedInstance.connect();
-    await tempConnection.run("SET home_directory='/tmp'");
-    tempConnection.closeSync();
   }
   return cachedInstance;
 }
