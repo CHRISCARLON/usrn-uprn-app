@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "404: USRN Not Found - Report Missing Location Identifiers",
+  title: "Data Watchman",
   description:
-    "Report datasets missing USRN or UPRN identifiers to improve UK location data infrastructure",
+    "Report datasets missing USRN or UPRN identifiers to improve location data",
 };
 
 export default function RootLayout({
