@@ -4,15 +4,12 @@ import { submissionSchema } from "@/lib/validation";
 
 let requestCount = 0;
 let windowStart = Date.now();
-
-// Cache DuckDB instance
 let cachedInstance: DuckDBInstance | null = null;
 
 async function getDuckDBInstance() {
   if (!cachedInstance) {
     console.log("Creating and configuring DuckDB instance...");
 
-    // Set home directory in process environment before creating instance
     process.env.HOME = "/tmp";
 
     const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
@@ -24,7 +21,6 @@ async function getDuckDBInstance() {
 function rateLimit(maxRequests = 150, windowMs = 30 * 60 * 1000): boolean {
   const now = Date.now();
 
-  // Reset window if expired
   if (now - windowStart >= windowMs) {
     console.log("Rate limit window reset");
     requestCount = 0;
@@ -68,12 +64,6 @@ export async function POST(request: NextRequest) {
 
     const formData = validationResult.data;
 
-    // Quick env check
-    console.log("Env vars exist:", {
-      MOTHERDUCK_DB: !!process.env.MOTHERDUCK_DB,
-      MOTHERDUCK_TOKEN: !!process.env.MOTHERDUCK_TOKEN,
-    });
-
     // Get cached instance (home directory already configured)
     const instance = await getDuckDBInstance();
     const connection = await instance.connect();
@@ -105,17 +95,7 @@ export async function POST(request: NextRequest) {
       message: "Report submitted successfully!",
     });
   } catch (error) {
-    // Simple error logging
-    console.error("❌ Form submission error:");
-    console.error("Error:", error);
-    console.error(
-      "Error message:",
-      error instanceof Error ? error.message : String(error)
-    );
-    console.error(
-      "Error stack:",
-      error instanceof Error ? error.stack : "No stack trace"
-    );
+    console.error("Form submission failed:", error);
 
     return NextResponse.json(
       { success: false, message: "Failed to submit report" },
