@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const connection = await instance.connect();
 
     const bdukTable = process.env.BDUK_TABLE;
-    const osTable = process.env.OS_IDENTIFIERS_TABLE;
+    // const osTable = process.env.OS_IDENTIFIERS_TABLE;
     try {
       // Query to get BDUK premises data for the given USRN
       const result = await connection.runAndReadAll(
@@ -103,12 +103,9 @@ export async function POST(request: NextRequest) {
           bduk.future_gigabit,
           bduk.lot_name,
           bduk.subsidy_control_status,
-          usrn.identifier_2 AS usrn,
           COUNT(*) OVER() as total_count
           FROM ${bdukTable} bduk
-          LEFT JOIN ${osTable} usrn
-          ON bduk.uprn = usrn.identifier_1
-        WHERE usrn.identifier_2 = ?;
+        WHERE bduk.usrn = ?;
         `,
         [parseInt(usrn)],
       );
