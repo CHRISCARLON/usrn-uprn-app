@@ -1,11 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Header from "./components/Header";
 import InfoCards from "./components/InfoCards";
 import SubmissionForm from "./components/SubmissionForm";
 import InfoCard2 from "./components/InfoCard2";
+import Navigation from "./components/Navigation";
+import HomePage from "./components/HomePage";
+import USRNLookup from "./components/USRNLookup";
 
 export default function Home() {
+  const [currentView, setCurrentView] = useState("home");
+
   const handleFormSubmit = () => {
     alert("Thank you for your submission! We'll review the dataset.");
   };
@@ -29,6 +35,33 @@ export default function Home() {
     "Precise location-based data analysis",
     "Improved government data interoperability",
   ];
+
+  const renderContent = () => {
+    switch (currentView) {
+      case "home":
+        return <HomePage onNavigate={setCurrentView} />;
+
+      case "report":
+        return (
+          <>
+            <InfoCards cards={infoCards} />
+            <SubmissionForm onSubmit={handleFormSubmit} />
+            <InfoCard2
+              title="Why does this matter?"
+              description="USRNs and UPRNs are integral to location data and enable:"
+              benefits={benefits}
+              conclusion="By reporting datasets that should include these identifiers, you contribute to better public services and more effective use of government data."
+            />
+          </>
+        );
+
+      case "lookup":
+        return <USRNLookup />;
+
+      default:
+        return <HomePage onNavigate={setCurrentView} />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -68,22 +101,25 @@ export default function Home() {
       </div>
 
       <Header
-        title="404: USRN and/or UPRN Not Found"
-        subtitle="Report datasets that are missing Unique Street Reference Numbers (USRN) or Unique Property Reference Numbers (UPRN) to help improve location data."
+        title={
+          currentView === "lookup"
+            ? "USRN BDUK Connectivity Lookup"
+            : currentView === "report"
+              ? "404: USRN and/or UPRN Not Found"
+              : "Data Watchman Data Hub"
+        }
+        subtitle={
+          currentView === "lookup"
+            ? "Retrieve BDUK premises and broadband gigabit availability data at USRN level. "
+            : currentView === "report"
+              ? "Report datasets that are missing USRNs and/or UPRNs."
+              : "An ensemble of mini tools that showcase interesting things with open data. "
+        }
       />
 
-      <main className="max-w-5xl mx-auto px-6 py-16">
-        <InfoCards cards={infoCards} />
+      <Navigation currentView={currentView} onViewChange={setCurrentView} />
 
-        <SubmissionForm onSubmit={handleFormSubmit} />
-
-        <InfoCard2
-          title="Why does this matter?"
-          description="USRNs and UPRNs are integral to location data and enable:"
-          benefits={benefits}
-          conclusion="By reporting datasets that should include these identifiers, you contribute to better public services and more effective use of government data."
-        />
-      </main>
+      <main className="max-w-5xl mx-auto px-6 py-16">{renderContent()}</main>
     </div>
   );
 }

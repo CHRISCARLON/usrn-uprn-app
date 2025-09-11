@@ -84,7 +84,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -291,7 +291,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                   onChange={handleChange}
                   disabled={isSubmitting}
                   className="w-full p-3 border-2 border-slate-300 text-sm font-medium focus:ring-0 focus:border-slate-500 bg-slate-50 text-slate-900 transition-all duration-200 hover:bg-white disabled:opacity-50"
-                  placeholder="e.g., Data Analyst, GIS Specialist"
+                  placeholder="e.g. Data Analyst, GIS Specialist"
                 />
               </div>
 

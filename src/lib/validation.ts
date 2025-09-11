@@ -24,3 +24,14 @@ export const submissionSchema = z.object({
 });
 
 export type SubmissionData = z.infer<typeof submissionSchema>;
+
+export const usrnSchema = z.object({
+  usrn: z
+    .string()
+    .regex(/^\d+$/, "USRN must contain only numbers")
+    .min(1, "USRN is required")
+    .max(20, "USRN is too long"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export type USRNData = z.infer<typeof usrnSchema>;

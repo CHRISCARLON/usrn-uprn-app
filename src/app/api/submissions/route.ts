@@ -10,13 +10,18 @@ async function getDuckDBInstance() {
   if (!cachedInstance) {
     process.env.HOME = "/tmp";
 
-    const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
-    cachedInstance = await DuckDBInstance.create(connectionString);
+    try {
+      const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
+      cachedInstance = await DuckDBInstance.create(connectionString);
+    } catch {
+      console.error("Failed to create DuckDB instance:", "Connection failed");
+      throw new Error("Database connection failed");
+    }
   }
   return cachedInstance;
 }
 
-function rateLimit(maxRequests = 150, windowMs = 30 * 60 * 1000): boolean {
+function rateLimit(maxRequests = 20, windowMs = 30 * 60 * 1000): boolean {
   const now = Date.now();
 
   if (now - windowStart >= windowMs) {
@@ -35,14 +40,13 @@ function rateLimit(maxRequests = 150, windowMs = 30 * 60 * 1000): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  // Check rate limit first - 150 requests per 30 minutes
-  if (!rateLimit(150, 30 * 60 * 1000)) {
+  if (!rateLimit(20, 30 * 60 * 1000)) {
     return NextResponse.json(
       {
         success: false,
         message: "Too many requests. Please try again later.",
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -56,20 +60,20 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "Invalid data provided",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const formData = validationResult.data;
 
-    // Get cached instance (home directory already configured)
     const instance = await getDuckDBInstance();
     const connection = await instance.connect();
 
-    // Insert data
+    const submissionsTable = process.env.SUBMISSIONS_TABLE;
+
     await connection.run(
       `
-      INSERT INTO usrn_uprn_reports.submissions (
+      INSERT INTO ${submissionsTable} (
         dataset_name, dataset_url, dataset_owner, owner_name,
         description, missing_type, job_title, sector
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -83,7 +87,7 @@ export async function POST(request: NextRequest) {
         formData.missingType.toLowerCase(),
         formData.jobTitle || null,
         formData.sector,
-      ]
+      ],
     );
 
     connection.closeSync();
@@ -97,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: false, message: "Failed to submit report" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
