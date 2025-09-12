@@ -395,7 +395,7 @@ export default function USRNLookup() {
               onClick={() => setShowDetails(!showDetails)}
               className="w-full text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
-              {showDetails ? "Hide" : "Show"} Detailed Premises List
+              {showDetails ? "Hide" : "Show"} Detailed UPRN List
             </button>
 
             {showDetails && (
