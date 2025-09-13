@@ -50,7 +50,7 @@ export default function USRNLookup() {
   const [authConfigLoading, setAuthConfigLoading] = useState(true);
   const [rateLimit, setRateLimit] = useState({
     current: 0,
-    max: 20,
+    max: 30,
     resetIn: 0,
   });
 
@@ -74,15 +74,78 @@ export default function USRNLookup() {
   }, []);
 
   useEffect(() => {
-    const fetchInitialRateLimit = () => {
-      fetch("/api/usrn-lookup")
-        .then((res) => res.json())
-        .then((data) => setRateLimit(data))
-        .catch(() => {});
+    const updateRateLimit = () => {
+      const now = Date.now();
+      const rateLimitData = localStorage.getItem("rateLimitData");
+
+      if (!rateLimitData) {
+        const newData = {
+          requests: [],
+          windowStart: now,
+          max: 30,
+          windowMinutes: 30,
+        };
+        localStorage.setItem("rateLimitData", JSON.stringify(newData));
+        setRateLimit({
+          current: 0,
+          max: 30,
+          resetIn: 60 * 60 * 1000,
+        });
+        return;
+      }
+
+      const data = JSON.parse(rateLimitData);
+      const windowMs = data.windowMinutes * 60 * 1000;
+
+      data.requests = data.requests.filter(
+        (timestamp: number) => now - timestamp < windowMs,
+      );
+
+      if (now - data.windowStart >= windowMs) {
+        data.windowStart = now;
+        data.requests = [];
+      }
+
+      localStorage.setItem("rateLimitData", JSON.stringify(data));
+
+      setRateLimit({
+        current: data.requests.length,
+        max: data.max,
+        resetIn: windowMs - (now - data.windowStart),
+      });
     };
 
-    fetchInitialRateLimit();
+    updateRateLimit();
   }, []);
+
+  const recordRequest = () => {
+    const now = Date.now();
+    const rateLimitData = localStorage.getItem("rateLimitData");
+
+    if (!rateLimitData) return;
+
+    const data = JSON.parse(rateLimitData);
+    const windowMs = data.windowMinutes * 60 * 1000;
+
+    data.requests.push(now);
+
+    data.requests = data.requests.filter(
+      (timestamp: number) => now - timestamp < windowMs,
+    );
+
+    if (now - data.windowStart >= windowMs) {
+      data.windowStart = now;
+      data.requests = [now];
+    }
+
+    localStorage.setItem("rateLimitData", JSON.stringify(data));
+
+    setRateLimit({
+      current: data.requests.length,
+      max: data.max,
+      resetIn: windowMs - (now - data.windowStart),
+    });
+  };
 
   useEffect(() => {
     if (usrn === "") {
@@ -124,9 +187,18 @@ export default function USRNLookup() {
         return;
       }
 
+      if (rateLimit.current >= rateLimit.max) {
+        setError(
+          "Rate limit exceeded. Please wait before making another request.",
+        );
+        return;
+      }
+
       setLoading(true);
       setError("");
       setData(null);
+
+      recordRequest();
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -150,10 +222,6 @@ export default function USRNLookup() {
 
       const result = await response.json();
       setData(result.data);
-
-      if (result.rateLimit) {
-        setRateLimit(result.rateLimit);
-      }
     } catch {
       setError("Request Failed");
     } finally {
