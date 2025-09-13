@@ -74,17 +74,14 @@ export default function USRNLookup() {
   }, []);
 
   useEffect(() => {
-    const fetchRateLimit = () => {
+    const fetchInitialRateLimit = () => {
       fetch("/api/usrn-lookup")
         .then((res) => res.json())
         .then((data) => setRateLimit(data))
         .catch(() => {});
     };
 
-    fetchRateLimit();
-    const interval = setInterval(fetchRateLimit, 10000);
-
-    return () => clearInterval(interval);
+    fetchInitialRateLimit();
   }, []);
 
   useEffect(() => {
