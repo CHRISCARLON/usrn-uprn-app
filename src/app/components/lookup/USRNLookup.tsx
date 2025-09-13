@@ -48,11 +48,7 @@ export default function USRNLookup() {
   const [validationError, setValidationError] = useState("");
   const [requirePassword, setRequirePassword] = useState<boolean | null>(null);
   const [authConfigLoading, setAuthConfigLoading] = useState(true);
-  const [rateLimit, setRateLimit] = useState({
-    current: 0,
-    max: 30,
-    resetIn: 0,
-  });
+  const [requestCount, setRequestCount] = useState(0);
 
   useEffect(() => {
     fetch("/api/auth-config")
@@ -74,77 +70,20 @@ export default function USRNLookup() {
   }, []);
 
   useEffect(() => {
-    const updateRateLimit = () => {
-      const now = Date.now();
-      const rateLimitData = localStorage.getItem("rateLimitData");
-
-      if (!rateLimitData) {
-        const newData = {
-          requests: [],
-          windowStart: now,
-          max: 30,
-          windowMinutes: 30,
-        };
-        localStorage.setItem("rateLimitData", JSON.stringify(newData));
-        setRateLimit({
-          current: 0,
-          max: 30,
-          resetIn: 60 * 60 * 1000,
-        });
-        return;
+    const updateRequestCount = () => {
+      const storedCount = localStorage.getItem("requestCount");
+      if (storedCount) {
+        setRequestCount(parseInt(storedCount, 10));
       }
-
-      const data = JSON.parse(rateLimitData);
-      const windowMs = data.windowMinutes * 60 * 1000;
-
-      data.requests = data.requests.filter(
-        (timestamp: number) => now - timestamp < windowMs,
-      );
-
-      if (now - data.windowStart >= windowMs) {
-        data.windowStart = now;
-        data.requests = [];
-      }
-
-      localStorage.setItem("rateLimitData", JSON.stringify(data));
-
-      setRateLimit({
-        current: data.requests.length,
-        max: data.max,
-        resetIn: windowMs - (now - data.windowStart),
-      });
     };
 
-    updateRateLimit();
+    updateRequestCount();
   }, []);
 
   const recordRequest = () => {
-    const now = Date.now();
-    const rateLimitData = localStorage.getItem("rateLimitData");
-
-    if (!rateLimitData) return;
-
-    const data = JSON.parse(rateLimitData);
-    const windowMs = data.windowMinutes * 60 * 1000;
-
-    data.requests.push(now);
-
-    data.requests = data.requests.filter(
-      (timestamp: number) => now - timestamp < windowMs,
-    );
-
-    if (now - data.windowStart >= windowMs) {
-      data.windowStart = now;
-      data.requests = [now];
-    }
-
-    localStorage.setItem("rateLimitData", JSON.stringify(data));
-
-    setRateLimit({
-      current: data.requests.length,
-      max: data.max,
-      resetIn: windowMs - (now - data.windowStart),
-    });
+    const newCount = requestCount + 1;
+    setRequestCount(newCount);
+    localStorage.setItem("requestCount", newCount.toString());
   };
 
   useEffect(() => {
@@ -184,13 +123,6 @@ export default function USRNLookup() {
 
       if (requirePassword && (!password || password.trim().length === 0)) {
         setError("Password is required");
-        return;
-      }
-
-      if (rateLimit.current >= rateLimit.max) {
-        setError(
-          "Rate limit exceeded. Please wait before making another request.",
-        );
         return;
       }
 
@@ -264,47 +196,11 @@ export default function USRNLookup() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Rate Limit Indicator */}
+          {/* Request Counter */}
           <div className="mb-4">
-            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-              <span>Remaining Requests</span>
-              <span className="whitespace-nowrap">
-                {isNaN(rateLimit.max - rateLimit.current)
-                  ? "Loading..."
-                  : `${rateLimit.max - rateLimit.current} Remaining!`}
-              </span>
+            <div className="text-xs text-gray-500">
+              <span>Requests Made: {requestCount}</span>
             </div>
-            <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`absolute top-0 left-0 h-full transition-all duration-500 ${
-                  rateLimit.current / rateLimit.max > 0.8
-                    ? "bg-red-500"
-                    : rateLimit.current / rateLimit.max > 0.6
-                      ? "bg-orange-500"
-                      : rateLimit.current / rateLimit.max > 0.4
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                }`}
-                style={{
-                  width: `${(rateLimit.current / rateLimit.max) * 100}%`,
-                }}
-              />
-              {rateLimit.current / rateLimit.max > 0.7 && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
-              )}
-            </div>
-            {rateLimit.current >= rateLimit.max && (
-              <p className="text-xs text-red-600 mt-1">
-                Rate limit reached. Resets in{" "}
-                {Math.ceil(rateLimit.resetIn / 60000)} minutes.
-              </p>
-            )}
-            {rateLimit.current / rateLimit.max > 0.8 &&
-              rateLimit.current < rateLimit.max && (
-                <p className="text-xs text-orange-600 mt-1">
-                  {rateLimit.max - rateLimit.current} requests remaining.
-                </p>
-              )}
           </div>
 
           <div>
