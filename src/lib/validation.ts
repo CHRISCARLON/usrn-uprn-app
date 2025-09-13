@@ -28,10 +28,8 @@ export type SubmissionData = z.infer<typeof submissionSchema>;
 export const usrnSchema = z.object({
   usrn: z
     .string()
-    .regex(/^\d+$/, "USRN must contain only numbers")
-    .min(1, "USRN is required")
-    .max(20, "USRN is too long"),
-  password: z.string().min(1, "Password is required"),
+    .regex(/^\d{8}$/, "USRN must be exactly 8 digits!")
+    .length(8, "USRN must be exactly 8 digits!"),
 });
 
 export type USRNData = z.infer<typeof usrnSchema>;

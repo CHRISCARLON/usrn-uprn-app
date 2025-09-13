@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Header from "./components/Header";
-import InfoCards from "./components/InfoCards";
-import SubmissionForm from "./components/SubmissionForm";
-import InfoCard2 from "./components/InfoCard2";
-import Navigation from "./components/Navigation";
-import HomePage from "./components/HomePage";
-import USRNLookup from "./components/USRNLookup";
+import Header from "./components/shared/Header";
+import Navigation from "./components/shared/Navigation";
+import HomePage from "./components/home/HomePage";
+import USRNLookup from "./components/lookup/USRNLookup";
+import InfoCard from "./components/report/InfoCard";
+import SubmissionForm from "./components/report/SubmissionForm";
+import InfoCard2 from "./components/report/InfoCard2";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState("home");
@@ -30,10 +30,10 @@ export default function Home() {
   ];
 
   const benefits = [
-    "Accurate emergency service response",
-    "Efficient public service delivery",
-    "Precise location-based data analysis",
-    "Improved government data interoperability",
+    "Accurate emergency service response.",
+    "Efficient public service delivery.",
+    "Precise location-based data analysis.",
+    "Improved government data interoperability.",
   ];
 
   const renderContent = () => {
@@ -44,7 +44,7 @@ export default function Home() {
       case "report":
         return (
           <>
-            <InfoCards cards={infoCards} />
+            <InfoCard cards={infoCards} />
             <SubmissionForm onSubmit={handleFormSubmit} />
             <InfoCard2
               title="Why does this matter?"
@@ -103,7 +103,7 @@ export default function Home() {
       <Header
         title={
           currentView === "lookup"
-            ? "USRN BDUK Connectivity Lookup"
+            ? "BDUK Connectivity Lookup"
             : currentView === "report"
               ? "404: USRN and/or UPRN Not Found"
               : "Data Watchman Data Hub"

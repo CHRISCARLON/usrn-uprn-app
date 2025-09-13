@@ -71,7 +71,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </div>
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-3">
-            USRN BDUK Connectivity Lookup
+            BDUK Connectivity Lookup
           </h2>
           <p className="text-gray-600 mb-6">
             Want to know if your street is Gigabit ready? Enter a USRN and find

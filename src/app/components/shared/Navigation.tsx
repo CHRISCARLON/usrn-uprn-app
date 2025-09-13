@@ -39,7 +39,7 @@ export default function Navigation({
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            USRN Lookup
+            BDUK Lookup
           </button>
         </nav>
       </div>

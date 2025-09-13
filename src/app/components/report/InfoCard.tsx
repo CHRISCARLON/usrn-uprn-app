@@ -7,7 +7,7 @@ interface InfoCardsProps {
   cards: InfoCard[];
 }
 
-export default function InfoCards({ cards }: InfoCardsProps) {
+export default function InfoCard({ cards }: InfoCardsProps) {
   return (
     <section className="mb-12 grid md:grid-cols-2 gap-6">
       {cards.map((card, index) => (

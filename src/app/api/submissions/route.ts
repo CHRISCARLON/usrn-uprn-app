@@ -1,10 +1,16 @@
 import { DuckDBInstance } from "@duckdb/node-api";
 import { NextRequest, NextResponse } from "next/server";
 import { submissionSchema } from "@/lib/validation";
+import { handleCors, validateOrigin } from "../middleware/cors";
 
 let requestCount = 0;
 let windowStart = Date.now();
 let cachedInstance: DuckDBInstance | null = null;
+
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!) || 30;
+const RATE_LIMIT_WINDOW =
+  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 ||
+  30 * 60 * 1000;
 
 async function getDuckDBInstance() {
   if (!cachedInstance) {
@@ -21,16 +27,16 @@ async function getDuckDBInstance() {
   return cachedInstance;
 }
 
-function rateLimit(maxRequests = 20, windowMs = 30 * 60 * 1000): boolean {
+function rateLimit(): boolean {
   const now = Date.now();
 
-  if (now - windowStart >= windowMs) {
+  if (now - windowStart >= RATE_LIMIT_WINDOW) {
     console.log("Rate limit window reset");
     requestCount = 0;
     windowStart = now;
   }
 
-  if (requestCount >= maxRequests) {
+  if (requestCount >= RATE_LIMIT_MAX) {
     console.log("Rate limit exceeded!");
     return false;
   }
@@ -40,13 +46,29 @@ function rateLimit(maxRequests = 20, windowMs = 30 * 60 * 1000): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  if (!rateLimit(20, 30 * 60 * 1000)) {
+  const corsHeaders = handleCors(request);
+
+  if (request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 200, headers: corsHeaders });
+  }
+
+  if (!validateOrigin(request)) {
     return NextResponse.json(
       {
         success: false,
-        message: "Too many requests. Please try again later.",
+        message: "Request Failed",
       },
-      { status: 429 },
+      { status: 403 },
+    );
+  }
+
+  if (!rateLimit()) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Request Failed",
+      },
+      { status: 400 },
     );
   }
 
@@ -58,7 +80,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid data provided",
+          message: "Request Failed",
         },
         { status: 400 },
       );
@@ -67,6 +89,7 @@ export async function POST(request: NextRequest) {
     const formData = validationResult.data;
 
     const instance = await getDuckDBInstance();
+
     const connection = await instance.connect();
 
     const submissionsTable = process.env.SUBMISSIONS_TABLE;
@@ -92,15 +115,18 @@ export async function POST(request: NextRequest) {
 
     connection.closeSync();
 
-    return NextResponse.json({
-      success: true,
-      message: "Report submitted successfully!",
-    });
-  } catch (error) {
-    console.error("Form submission failed:", error);
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Request completed",
+      },
+      { headers: corsHeaders },
+    );
+  } catch {
+    console.error("Request Failed");
 
     return NextResponse.json(
-      { success: false, message: "Failed to submit report" },
+      { success: false, message: "Request Failed" },
       { status: 500 },
     );
   }

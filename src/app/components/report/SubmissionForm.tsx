@@ -74,7 +74,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
     } catch {
       setSubmitMessage({
         type: "error",
-        text: "An unexpected error occurred. Please try again.",
+        text: "Request Failed",
       });
     } finally {
       setIsSubmitting(false);

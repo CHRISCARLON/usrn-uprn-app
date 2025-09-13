@@ -46,6 +46,46 @@ export default function USRNLookup() {
   const [showDetails, setShowDetails] = useState(false);
   const [isValid, setIsValid] = useState(false);
   const [validationError, setValidationError] = useState("");
+  const [requirePassword, setRequirePassword] = useState<boolean | null>(null);
+  const [authConfigLoading, setAuthConfigLoading] = useState(true);
+  const [rateLimit, setRateLimit] = useState({
+    current: 0,
+    max: 20,
+    resetIn: 0,
+  });
+
+  useEffect(() => {
+    fetch("/api/auth-config")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setRequirePassword(data.requirePassword);
+        setAuthConfigLoading(false);
+      })
+      .catch((error) => {
+        console.error("Auth config failed:", error);
+        setRequirePassword(true);
+        setAuthConfigLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    const fetchRateLimit = () => {
+      fetch("/api/usrn-lookup")
+        .then((res) => res.json())
+        .then((data) => setRateLimit(data))
+        .catch(() => {});
+    };
+
+    fetchRateLimit();
+    const interval = setInterval(fetchRateLimit, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (usrn === "") {
@@ -58,65 +98,83 @@ export default function USRNLookup() {
       z.object({
         usrn: z
           .string()
-          .regex(/^\d+$/, "USRN must contain only numbers")
-          .min(1, "USRN is required")
-          .max(20, "USRN is too long"),
+          .regex(/^\d{8}$/, "USRN must be exactly 8 digits!")
+          .length(8, "USRN must be exactly 8 digits!"),
       }).parse({ usrn });
       setIsValid(true);
       setValidationError("");
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        setIsValid(false);
-        setValidationError(err.errors[0]?.message || "Invalid USRN");
-      }
+    } catch {
+      setIsValid(false);
+      setValidationError("USRN must be 8 digits long!");
     }
   }, [usrn]);
 
-  const isFormValid = isValid && password.trim().length > 0;
+  const isFormValid = requirePassword
+    ? isValid && password.trim().length > 0
+    : isValid;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const validatedData = usrnSchema.parse({
+      const submitData = {
         usrn: usrn.trim(),
-        password: password.trim(),
-      });
+      };
+      const validatedData = usrnSchema.parse(submitData);
+
+      if (requirePassword && (!password || password.trim().length === 0)) {
+        setError("Password is required");
+        return;
+      }
 
       setLoading(true);
       setError("");
       setData(null);
 
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      if (requirePassword) {
+        headers["Authorization"] = `Bearer ${password.trim()}`;
+      }
+
       const response = await fetch("/api/usrn-lookup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           usrn: validatedData.usrn,
-          password: password.trim(),
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch USRN data");
+        throw new Error("Request Failed");
       }
 
       const result = await response.json();
       setData(result.data);
-    } catch (err: unknown) {
-      if (err instanceof z.ZodError) {
-        setError(err.errors[0]?.message || "Invalid USRN format");
-      } else {
-        setError(
-          (err as Error).message || "An error occurred while fetching data",
-        );
+
+      if (result.rateLimit) {
+        setRateLimit(result.rateLimit);
       }
+    } catch {
+      setError("Request Failed");
     } finally {
       setLoading(false);
     }
   };
+
+  if (authConfigLoading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="flex justify-center">
+            <div className="text-gray-500">Loading...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -125,19 +183,65 @@ export default function USRNLookup() {
           This tool provides BDUK&apos;s current view of whether premises have
           gigabit connections and future delivery plans.
         </p>
-        <p className=" text-gray-500 mb-6">
-          Don&apos;t know your USRN? Find it at{" "}
-          <a
-            href="https://www.findmystreet.co.uk/map"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline font-medium"
-          >
-            Find My Street!
-          </a>
+        <p className="text-gray-500 mb-6">
+          <span className="block mb-4">Don&apos;t know your USRN?</span>
+          <span className="block">
+            Go to →{" "}
+            <a
+              href="https://www.findmystreet.co.uk/map"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Find My Street!
+            </a>
+          </span>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Rate Limit Indicator */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+              <span>Remaining Requests</span>
+              <span className="whitespace-nowrap">
+                {isNaN(rateLimit.max - rateLimit.current)
+                  ? "Loading..."
+                  : `${rateLimit.max - rateLimit.current} Remaining!`}
+              </span>
+            </div>
+            <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={`absolute top-0 left-0 h-full transition-all duration-500 ${
+                  rateLimit.current / rateLimit.max > 0.8
+                    ? "bg-red-500"
+                    : rateLimit.current / rateLimit.max > 0.6
+                      ? "bg-orange-500"
+                      : rateLimit.current / rateLimit.max > 0.4
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
+                }`}
+                style={{
+                  width: `${(rateLimit.current / rateLimit.max) * 100}%`,
+                }}
+              />
+              {rateLimit.current / rateLimit.max > 0.7 && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+              )}
+            </div>
+            {rateLimit.current >= rateLimit.max && (
+              <p className="text-xs text-red-600 mt-1">
+                Rate limit reached. Resets in{" "}
+                {Math.ceil(rateLimit.resetIn / 60000)} minutes.
+              </p>
+            )}
+            {rateLimit.current / rateLimit.max > 0.8 &&
+              rateLimit.current < rateLimit.max && (
+                <p className="text-xs text-orange-600 mt-1">
+                  {rateLimit.max - rateLimit.current} requests remaining.
+                </p>
+              )}
+          </div>
+
           <div>
             <label
               htmlFor="usrn"
@@ -154,7 +258,7 @@ export default function USRNLookup() {
                 placeholder="e.g. 11004423"
                 className={`w-full px-4 py-2 border rounded-md focus:ring-2 transition-colors ${
                   usrn && !isValid
-                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                    ? "border-orange-300 focus:ring-orange-500 focus:border-orange-500"
                     : usrn && isValid
                       ? "border-green-300 focus:ring-green-500 focus:border-green-500"
                       : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
@@ -196,22 +300,24 @@ export default function USRNLookup() {
             )}
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Access Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter access password"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+          {requirePassword && (
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Access Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter access password"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
@@ -222,13 +328,39 @@ export default function USRNLookup() {
           <button
             type="submit"
             disabled={loading || !isFormValid}
-            className={`w-full font-medium py-2 px-4 rounded-md transition-all duration-200 ${
+            className={`w-full font-medium py-2 px-4 rounded-md transition-all duration-200 flex items-center justify-center ${
               !isFormValid || loading
                 ? "bg-gray-400 text-gray-200 cursor-not-allowed"
                 : "bg-green-600 text-white hover:bg-green-700 active:bg-green-800 cursor-pointer"
             }`}
           >
-            {loading ? "Searching..." : "Look Up USRN"}
+            {loading ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Searching...
+              </>
+            ) : (
+              "Look Up USRN"
+            )}
           </button>
         </form>
 
@@ -381,6 +513,15 @@ export default function USRNLookup() {
                     </span>
                   </div>
                 </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-amber-200">
+                <p className="text-xs text-gray-700">
+                  <span className="font-semibold">Note:</span> When a premise
+                  shows both current and future gigabit (✓ in both columns), it
+                  means gigabit service is already available from at least one
+                  supplier, and additional suppliers will provide coverage in
+                  the future, increasing competition and choice.
+                </p>
               </div>
             </div>
 

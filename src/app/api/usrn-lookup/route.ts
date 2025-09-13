@@ -1,10 +1,15 @@
 import { DuckDBInstance } from "@duckdb/node-api";
 import { NextRequest, NextResponse } from "next/server";
 import { usrnSchema } from "@/lib/validation";
+import { handleCors, validateOrigin } from "../middleware/cors";
 
 let requestCount = 0;
 let windowStart = Date.now();
 let cachedInstance: DuckDBInstance | null = null;
+
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!);
+const RATE_LIMIT_WINDOW =
+  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000;
 
 interface PostcodeGroup {
   postcode: string;
@@ -20,24 +25,45 @@ async function getDuckDBInstance() {
     try {
       const connectionString = `md:${process.env.MOTHERDUCK_DB_2}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
       cachedInstance = await DuckDBInstance.create(connectionString);
-    } catch (error) {
-      console.error("Failed to create DuckDB instance:", error);
+    } catch {
+      console.error("Failed to create DuckDB instance:");
       throw new Error("Database connection failed");
     }
   }
   return cachedInstance;
 }
 
-function rateLimit(maxRequests = 20, windowMs = 30 * 60 * 1000): boolean {
+function getRateLimitStatus() {
+  const now = Date.now();
+  const timeElapsed = now - windowStart;
+
+  if (timeElapsed >= RATE_LIMIT_WINDOW) {
+    requestCount = 0;
+    windowStart = now;
+    return {
+      current: 0,
+      max: RATE_LIMIT_MAX,
+      resetIn: RATE_LIMIT_WINDOW,
+    };
+  }
+
+  return {
+    current: requestCount,
+    max: RATE_LIMIT_MAX,
+    resetIn: RATE_LIMIT_WINDOW - timeElapsed,
+  };
+}
+
+function rateLimit(): boolean {
   const now = Date.now();
 
-  if (now - windowStart >= windowMs) {
+  if (now - windowStart >= RATE_LIMIT_WINDOW) {
     console.log("Rate limit window reset");
     requestCount = 0;
     windowStart = now;
   }
 
-  if (requestCount >= maxRequests) {
+  if (requestCount >= RATE_LIMIT_MAX) {
     console.log("Rate limit exceeded!");
     return false;
   }
@@ -46,18 +72,59 @@ function rateLimit(maxRequests = 20, windowMs = 30 * 60 * 1000): boolean {
   return true;
 }
 
+export async function GET(request: NextRequest) {
+  const corsHeaders = handleCors(request);
+
+  if (request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 200, headers: corsHeaders });
+  }
+
+  // No origin validation for GET - just rate limit status
+  const status = getRateLimitStatus();
+  return NextResponse.json(status, { headers: corsHeaders });
+}
+
 export async function POST(request: NextRequest) {
-  if (!rateLimit(20, 30 * 60 * 1000)) {
+  const corsHeaders = handleCors(request);
+
+  if (request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 200, headers: corsHeaders });
+  }
+
+  if (!validateOrigin(request)) {
+    return NextResponse.json(
+      { success: false, message: "Request Failed" },
+      { status: 403 },
+    );
+  }
+
+  if (!rateLimit()) {
     return NextResponse.json(
       {
         success: false,
-        message: "Too many requests. Please try again later.",
+        message: "Service temporarily unavailable",
       },
       { status: 429 },
     );
   }
   try {
     const body = await request.json();
+    const requirePassword = process.env.REQUIRE_PASSWORD !== "false";
+
+    if (requirePassword) {
+      const authHeader = request.headers.get("authorization");
+      const token = authHeader?.replace("Bearer ", "");
+
+      if (!token || token !== process.env.USRN_ACCESS_PASSWORD) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Request Failed",
+          },
+          { status: 401 },
+        );
+      }
+    }
 
     const validationResult = usrnSchema.safeParse(body);
 
@@ -65,30 +132,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            validationResult.error.errors[0]?.message || "Invalid USRN format",
+          message: "Request Failed",
         },
         { status: 400 },
       );
     }
 
-    const { usrn, password } = validationResult.data;
-
-    if (password !== process.env.USRN_ACCESS_PASSWORD) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid access password",
-        },
-        { status: 401 },
-      );
-    }
+    const { usrn } = validationResult.data;
 
     const instance = await getDuckDBInstance();
     const connection = await instance.connect();
 
     const bdukTable = process.env.BDUK_TABLE;
-    // const osTable = process.env.OS_IDENTIFIERS_TABLE;
     try {
       // Query to get BDUK premises data for the given USRN
       const result = await connection.runAndReadAll(
@@ -116,9 +171,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            message: "No data found for this USRN",
+            message: "Request Failed",
           },
-          { status: 404 },
+          { status: 400 },
         );
       }
 
@@ -161,34 +216,40 @@ export async function POST(request: NextRequest) {
         {} as Record<string, PostcodeGroup>,
       );
 
-      return NextResponse.json({
-        success: true,
-        data: {
-          usrn: usrn,
-          total_premises: totalCount,
-          showing: premises.length,
-          summary: {
-            postcodes: Object.values(postcodeGroups),
-            total_gigabit_ready: premises.filter((p) => p.current_gigabit)
-              .length,
-            total_future_gigabit: premises.filter((p) => p.future_gigabit)
-              .length,
-            region: premises[0]?.region,
-            local_authority: premises[0]?.local_authority,
+      const rateLimitStatus = getRateLimitStatus();
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            usrn: usrn,
+            total_premises: totalCount,
+            showing: premises.length,
+            summary: {
+              postcodes: Object.values(postcodeGroups),
+              total_gigabit_ready: premises.filter((p) => p.current_gigabit)
+                .length,
+              total_future_gigabit: premises.filter((p) => p.future_gigabit)
+                .length,
+              region: premises[0]?.region,
+              local_authority: premises[0]?.local_authority,
+            },
+            premises: premises,
           },
-          premises: premises,
+          rateLimit: rateLimitStatus,
         },
-      });
+        { headers: corsHeaders },
+      );
     } finally {
       connection.closeSync();
     }
-  } catch (error) {
-    console.error("USRN lookup failed:", error);
+  } catch {
+    console.error("Request Failed");
 
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to lookup USRN data",
+        message: "Request Failed",
       },
       { status: 500 },
     );
