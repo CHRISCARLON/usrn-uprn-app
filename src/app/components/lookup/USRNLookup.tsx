@@ -39,35 +39,14 @@ interface USRNData {
 
 export default function USRNLookup() {
   const [usrn, setUsrn] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [data, setData] = useState<USRNData | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [isValid, setIsValid] = useState(false);
   const [validationError, setValidationError] = useState("");
-  const [requirePassword, setRequirePassword] = useState<boolean | null>(null);
-  const [authConfigLoading, setAuthConfigLoading] = useState(true);
   const [requestCount, setRequestCount] = useState(0);
 
-  useEffect(() => {
-    fetch("/api/auth-config")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setRequirePassword(data.requirePassword);
-        setAuthConfigLoading(false);
-      })
-      .catch((error) => {
-        console.error("Auth config failed:", error);
-        setRequirePassword(true);
-        setAuthConfigLoading(false);
-      });
-  }, []);
 
   useEffect(() => {
     const updateRequestCount = () => {
@@ -108,9 +87,7 @@ export default function USRNLookup() {
     }
   }, [usrn]);
 
-  const isFormValid = requirePassword
-    ? isValid && password.trim().length > 0
-    : isValid;
+  const isFormValid = isValid;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,10 +98,6 @@ export default function USRNLookup() {
       };
       const validatedData = usrnSchema.parse(submitData);
 
-      if (requirePassword && (!password || password.trim().length === 0)) {
-        setError("Password is required");
-        return;
-      }
 
       setLoading(true);
       setError("");
@@ -136,9 +109,6 @@ export default function USRNLookup() {
         "Content-Type": "application/json",
       };
 
-      if (requirePassword) {
-        headers["Authorization"] = `Bearer ${password.trim()}`;
-      }
 
       const response = await fetch("/api/usrn-lookup", {
         method: "POST",
@@ -161,17 +131,6 @@ export default function USRNLookup() {
     }
   };
 
-  if (authConfigLoading) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <div className="flex justify-center">
-            <div className="text-gray-500">Loading...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -261,24 +220,6 @@ export default function USRNLookup() {
             )}
           </div>
 
-          {requirePassword && (
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Access Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter access password"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">

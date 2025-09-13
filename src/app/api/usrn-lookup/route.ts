@@ -91,6 +91,13 @@ export async function POST(request: NextRequest) {
     return new NextResponse(null, { status: 200, headers: corsHeaders });
   }
 
+  if (process.env.DISABLE_USRN_SEARCH === 'true') {
+    return NextResponse.json(
+      { success: false, message: "Service unavailable" },
+      { status: 503, headers: corsHeaders }
+    );
+  }
+
   if (!validateOrigin(request)) {
     return NextResponse.json(
       { success: false, message: "Request Failed" },
@@ -109,22 +116,6 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json();
-    const requirePassword = process.env.REQUIRE_PASSWORD !== "false";
-
-    if (requirePassword) {
-      const authHeader = request.headers.get("authorization");
-      const token = authHeader?.replace("Bearer ", "");
-
-      if (!token || token !== process.env.USRN_ACCESS_PASSWORD) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Request Failed",
-          },
-          { status: 401 },
-        );
-      }
-    }
 
     const validationResult = usrnSchema.safeParse(body);
 
