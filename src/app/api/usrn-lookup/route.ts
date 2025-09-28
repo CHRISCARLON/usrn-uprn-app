@@ -5,7 +5,6 @@ import { handleCors, validateOrigin } from "../middleware/cors";
 
 let requestCount = 0;
 let windowStart = Date.now();
-let cachedInstance: DuckDBInstance | null = null;
 
 const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!);
 const RATE_LIMIT_WINDOW =
@@ -19,52 +18,24 @@ interface PostcodeGroup {
 }
 
 async function getDuckDBInstance() {
-  if (!cachedInstance) {
-    process.env.HOME = "/tmp";
-
-    try {
-      const connectionString = `md:${process.env.MOTHERDUCK_DB_2}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
-      cachedInstance = await DuckDBInstance.create(connectionString);
-    } catch {
-      console.error("Failed to create DuckDB instance:");
-      throw new Error("Database connection failed");
-    }
+  process.env.HOME = "/tmp";
+  try {
+    const connectionString = `md:${process.env.MOTHERDUCK_DB_2}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
+    return await DuckDBInstance.fromCache(connectionString);
+  } catch {
+    throw new Error("Database connection failed");
   }
-  return cachedInstance;
-}
-
-function getRateLimitStatus() {
-  const now = Date.now();
-  const timeElapsed = now - windowStart;
-
-  if (timeElapsed >= RATE_LIMIT_WINDOW) {
-    requestCount = 0;
-    windowStart = now;
-    return {
-      current: 0,
-      max: RATE_LIMIT_MAX,
-      resetIn: RATE_LIMIT_WINDOW,
-    };
-  }
-
-  return {
-    current: requestCount,
-    max: RATE_LIMIT_MAX,
-    resetIn: RATE_LIMIT_WINDOW - timeElapsed,
-  };
 }
 
 function rateLimit(): boolean {
   const now = Date.now();
 
   if (now - windowStart >= RATE_LIMIT_WINDOW) {
-    console.log("Rate limit window reset");
     requestCount = 0;
     windowStart = now;
   }
 
   if (requestCount >= RATE_LIMIT_MAX) {
-    console.log("Rate limit exceeded!");
     return false;
   }
 
@@ -77,10 +48,10 @@ export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, { status: 200, headers: corsHeaders });
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const corsHeaders = handleCors(request);
 
-  if (process.env.DISABLE_USRN_SEARCH === 'true') {
+  if (process.env.DISABLE_USRN_SEARCH === "true") {
     return NextResponse.json(
       { success: false, message: "Service unavailable" },
       { status: 503, headers: corsHeaders }
@@ -90,7 +61,7 @@ export async function GET(request: NextRequest) {
   if (!validateOrigin(request)) {
     return NextResponse.json(
       { success: false, message: "Request Failed" },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -100,12 +71,12 @@ export async function GET(request: NextRequest) {
         success: false,
         message: "Service temporarily unavailable",
       },
-      { status: 429 },
+      { status: 429 }
     );
   }
   try {
-    const { searchParams } = new URL(request.url);
-    const usrn = searchParams.get('usrn');
+    const body = await request.json();
+    const { usrn } = body;
 
     if (!usrn) {
       return NextResponse.json(
@@ -113,7 +84,7 @@ export async function GET(request: NextRequest) {
           success: false,
           message: "USRN parameter is required",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -125,7 +96,7 @@ export async function GET(request: NextRequest) {
           success: false,
           message: "Invalid USRN format",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -151,7 +122,7 @@ export async function GET(request: NextRequest) {
           FROM ${bdukTable} bduk
         WHERE bduk.usrn = ?;
         `,
-        [parseInt(usrn)],
+        [parseInt(usrn)]
       );
 
       const rows = result.getRowObjects();
@@ -162,7 +133,7 @@ export async function GET(request: NextRequest) {
             success: false,
             message: "Request Failed",
           },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -186,26 +157,21 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      const postcodeGroups = premises.reduce(
-        (acc, premise) => {
-          const pc = premise.postcode || "Unknown";
-          if (!acc[pc]) {
-            acc[pc] = {
-              postcode: pc,
-              count: 0,
-              gigabit_ready: 0,
-              future_gigabit: 0,
-            };
-          }
-          acc[pc].count++;
-          if (premise.current_gigabit) acc[pc].gigabit_ready++;
-          if (premise.future_gigabit) acc[pc].future_gigabit++;
-          return acc;
-        },
-        {} as Record<string, PostcodeGroup>,
-      );
-
-      const rateLimitStatus = getRateLimitStatus();
+      const postcodeGroups = premises.reduce((acc, premise) => {
+        const pc = premise.postcode || "Unknown";
+        if (!acc[pc]) {
+          acc[pc] = {
+            postcode: pc,
+            count: 0,
+            gigabit_ready: 0,
+            future_gigabit: 0,
+          };
+        }
+        acc[pc].count++;
+        if (premise.current_gigabit) acc[pc].gigabit_ready++;
+        if (premise.future_gigabit) acc[pc].future_gigabit++;
+        return acc;
+      }, {} as Record<string, PostcodeGroup>);
 
       return NextResponse.json(
         {
@@ -225,22 +191,20 @@ export async function GET(request: NextRequest) {
             },
             premises: premises,
           },
-          rateLimit: rateLimitStatus,
         },
-        { headers: corsHeaders },
+        { headers: corsHeaders }
       );
     } finally {
       connection.closeSync();
     }
   } catch {
-    console.error("Request Failed");
 
     return NextResponse.json(
       {
         success: false,
         message: "Request Failed",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

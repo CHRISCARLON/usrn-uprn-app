@@ -21,7 +21,7 @@ export default function Home() {
     {
       title: "USRN",
       description:
-        "The Unique Street Reference Number (USRN) is an 8 digit unique identifier for every street across Great Britain.",
+        "The Unique Street Reference Number (USRN) is a unique identifier for every street across Great Britain.",
     },
     {
       title: "UPRN",
@@ -107,21 +107,21 @@ export default function Home() {
       <Header
         title={
           currentView === "lookup"
-            ? "BDUK Connectivity Lookup 🛜"
+            ? "BDUK Connectivity 🛜"
             : currentView === "report"
-              ? "404: USRN and/or UPRN Not Found 🤷‍♂️"
-              : currentView === "streetworks"
-                ? "Paris Street Works Data 🇫🇷"
-                : "Data Watchman Data Hub"
+            ? "404: USRN and/or UPRN Not Found 🤷‍♂️"
+            : currentView === "streetworks"
+            ? "Paris Street Works Data 🇫🇷"
+            : "Data Watchman Data Hub"
         }
         subtitle={
           currentView === "lookup"
             ? "Retrieve BDUK premises and broadband gigabit availability data at USRN level. "
             : currentView === "report"
-              ? "Report datasets that are missing USRNs and/or UPRNs."
-              : currentView === "streetworks"
-                ? "Access real-time street works data from Paris Open Data portal."
-                : "An ensemble of mini tools that showcase interesting things with open data. "
+            ? "Report datasets that are missing USRNs and/or UPRNs."
+            : currentView === "streetworks"
+            ? "Access real-time street works data from Paris Open data portal."
+            : "An ensemble of mini tools that showcase interesting things with open data. "
         }
       />
 

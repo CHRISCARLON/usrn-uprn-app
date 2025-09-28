@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleCors, validateOrigin } from "../middleware/cors";
 
+let requestCount = 0;
+let windowStart = Date.now();
+
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!) || 30;
+const RATE_LIMIT_WINDOW =
+  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 || 30 * 60 * 1000;
+
 interface IGNFeatureProperties {
   label?: string;
   name?: string;
@@ -38,7 +45,7 @@ async function reverseGeocode(lat: number, lon: number) {
     if (!response.ok) {
       return {
         success: false,
-        error: `Reverse geocoding failed with status: ${response.status}`,
+        error: "External service error",
       };
     }
 
@@ -57,15 +64,30 @@ async function reverseGeocode(lat: number, lon: number) {
 
     return {
       success: false,
-      error: "Aucune adresse trouvée pour ces coordonnées",
+      error: "Address not found",
     };
   } catch (error) {
-    console.error("Reverse geocoding error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
+      error: "Request Failed",
     };
   }
+}
+
+function rateLimit(): boolean {
+  const now = Date.now();
+
+  if (now - windowStart >= RATE_LIMIT_WINDOW) {
+    requestCount = 0;
+    windowStart = now;
+  }
+
+  if (requestCount >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  requestCount++;
+  return true;
 }
 
 export async function OPTIONS(request: NextRequest) {
@@ -79,8 +101,16 @@ export async function GET(request: NextRequest) {
   // Validate origin for non-OPTIONS requests
   if (!validateOrigin(request)) {
     return NextResponse.json(
-      { error: "Forbidden: Invalid origin" },
+      { error: "Request Failed" },
       { status: 403 }
+    );
+  }
+
+  // Check rate limit
+  if (!rateLimit()) {
+    return NextResponse.json(
+      { error: "Service temporarily unavailable" },
+      { status: 429, headers: corsHeaders }
     );
   }
 
@@ -94,7 +124,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing latitude or longitude parameters",
+          error: "Invalid parameters",
         },
         { status: 400, headers: corsHeaders }
       );
@@ -107,7 +137,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Invalid latitude or longitude values",
+          error: "Invalid parameters",
         },
         { status: 400, headers: corsHeaders }
       );
@@ -117,11 +147,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result, { headers: corsHeaders });
   } catch (error) {
-    console.error("Geocoding route error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "Request Failed",
       },
       { status: 500, headers: corsHeaders }
     );

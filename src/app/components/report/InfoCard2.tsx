@@ -12,7 +12,7 @@ export default function InfoCard2({
   conclusion,
 }: InfoCard2Props) {
   return (
-    <section className="mt-12 border-2 border-slate-200 bg-slate-100 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-sm">
+    <section className="mt-12 border-2 border-gray-700 bg-yellow-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all duration-150">
       <div className="p-5">
         <h3 className="text-lg font-black mb-4 text-slate-900 tracking-wide">
           {title}

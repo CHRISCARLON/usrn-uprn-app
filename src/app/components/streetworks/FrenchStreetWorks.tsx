@@ -57,7 +57,7 @@ export default function FrenchStreetWorks() {
 
     try {
       const response = await fetch(
-        `/api/companies?address=${encodeURIComponent(address)}`,
+        `/api/companies?address=${encodeURIComponent(address)}`
       );
 
       if (!response.ok) {
@@ -69,7 +69,7 @@ export default function FrenchStreetWorks() {
       if (result.success) {
         setCompanies(result.companies || []);
         console.log(
-          `Found ${result.total} companies on ${result.searchedStreet}`,
+          `Found ${result.total} companies on ${result.searchedStreet}`
         );
         console.log("Companies:", result.companies);
       }
@@ -150,11 +150,15 @@ export default function FrenchStreetWorks() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="bg-white border border-gray-300">
+      <div className="bg-white border-2 border-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
         {/* Header Section */}
         <div className="bg-gray-100 px-6 py-4 border-b border-gray-300">
-          <h2 className="text-lg font-semibold text-gray-900">Paris Street Works</h2>
-          <p className="text-sm text-gray-700">Live construction data from Paris Open Data</p>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Paris Street Works
+          </h2>
+          <p className="text-sm text-gray-700">
+            Live street works data from the Paris open data portal.
+          </p>
         </div>
 
         {/* Main Content */}
@@ -162,10 +166,10 @@ export default function FrenchStreetWorks() {
           <button
             onClick={fetchStreetWorks}
             disabled={loading}
-            className={`w-full py-3 px-4 border text-sm ${
+            className={`w-full py-3 px-4 border-2 text-sm transition-all duration-150 ${
               loading
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                : "bg-white text-gray-700 border-gray-400 hover:bg-gray-50"
+                : "bg-white text-gray-700 border-gray-600 hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
             }`}
           >
             {loading ? "Loading..." : "Fetch Street Works"}
@@ -181,7 +185,8 @@ export default function FrenchStreetWorks() {
             <div className="mt-4 space-y-4">
               <div className="p-3 bg-green-50 border border-green-200">
                 <p className="text-green-800 text-sm">
-                  Found {data.totalCount} street works currently in progress across Paris
+                  Found {data.totalCount} street works currently in progress
+                  across Paris
                 </p>
               </div>
 
@@ -205,7 +210,7 @@ export default function FrenchStreetWorks() {
                           className={`px-3 py-1 text-sm border ${
                             currentIndex === 0
                               ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                              : "bg-white text-gray-700 hover:bg-gray-50 border-gray-400"
+                              : "bg-white text-gray-700 border-gray-600 hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all duration-150"
                           }`}
                         >
                           Previous
@@ -216,7 +221,7 @@ export default function FrenchStreetWorks() {
                           className={`px-3 py-1 text-sm border ${
                             currentIndex === data.data.length - 1
                               ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                              : "bg-white text-gray-700 hover:bg-gray-50 border-gray-400"
+                              : "bg-white text-gray-700 border-gray-600 hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all duration-150"
                           }`}
                         >
                           Next
@@ -230,7 +235,9 @@ export default function FrenchStreetWorks() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* Timeline */}
                       <div className="border border-gray-200 p-3">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Timeline</h4>
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">
+                          Timeline
+                        </h4>
                         <div className="space-y-1 text-sm">
                           <div>Start: {data.data[currentIndex].startDate}</div>
                           <div>End: {data.data[currentIndex].endDate}</div>
@@ -239,45 +246,62 @@ export default function FrenchStreetWorks() {
 
                       {/* Location */}
                       <div className="border border-gray-200 p-3">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Location</h4>
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">
+                          Location
+                        </h4>
                         <div className="space-y-1 text-sm">
-                          <div>Arrondissement: {data.data[currentIndex].arrondissement}</div>
+                          <div>
+                            Arrondissement:{" "}
+                            {data.data[currentIndex].arrondissement}
+                          </div>
                           <div>Area: {data.data[currentIndex].area} m²</div>
                         </div>
                       </div>
 
                       {/* Project Info */}
                       <div className="border border-gray-200 p-3">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Project</h4>
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">
+                          Project
+                        </h4>
                         <div className="space-y-1 text-sm">
-                          <div>Category: {data.data[currentIndex].category}</div>
-                          <div>Contractor: {data.data[currentIndex].contractor}</div>
+                          <div>
+                            Category: {data.data[currentIndex].category}
+                          </div>
+                          <div>
+                            Contractor: {data.data[currentIndex].contractor}
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-4 border border-gray-200 p-3">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Description</h4>
-                      <p className="text-sm text-gray-700">{data.data[currentIndex].description}</p>
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">
+                        Description
+                      </h4>
+                      <p className="text-sm text-gray-700">
+                        {data.data[currentIndex].description}
+                      </p>
                     </div>
                   </div>
 
                   {/* Location Analysis Section */}
                   <div className="border-t border-gray-300 bg-gray-50 px-4 py-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">Location Analysis</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">
+                      Location Analysis
+                    </h4>
 
                     <button
                       onClick={() =>
                         fetchAddress(
                           data.data[currentIndex].coordinates.lat,
-                          data.data[currentIndex].coordinates.lon,
+                          data.data[currentIndex].coordinates.lon
                         )
                       }
                       disabled={loadingAddress}
                       className={`w-full py-2 px-3 text-sm border ${
                         loadingAddress
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                          : "bg-white text-gray-700 hover:bg-gray-50 border-gray-400"
+                          : "bg-white text-gray-700 border-gray-600 hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all duration-150"
                       }`}
                     >
                       {loadingAddress ? "Loading..." : "Get Street Address"}
@@ -285,7 +309,9 @@ export default function FrenchStreetWorks() {
 
                     {address && (
                       <div className="mt-3 bg-white border border-gray-300 p-3">
-                        <h5 className="text-sm font-medium text-gray-900 mb-2">Street Address</h5>
+                        <h5 className="text-sm font-medium text-gray-900 mb-2">
+                          Street Address
+                        </h5>
                         <p className="text-sm text-gray-700 mb-3">{address}</p>
 
                         <button
@@ -294,10 +320,12 @@ export default function FrenchStreetWorks() {
                           className={`w-full py-2 px-3 text-sm border ${
                             loadingCompanies
                               ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                              : "bg-white text-gray-700 hover:bg-gray-50 border-gray-400"
+                              : "bg-white text-gray-700 border-gray-600 hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all duration-150"
                           }`}
                         >
-                          {loadingCompanies ? "Loading..." : "Find Companies on This Street"}
+                          {loadingCompanies
+                            ? "Loading..."
+                            : "Find Companies on This Street"}
                         </button>
                       </div>
                     )}

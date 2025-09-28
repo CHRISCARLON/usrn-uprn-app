@@ -20,7 +20,6 @@ async function getDuckDBInstance() {
       const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
       cachedInstance = await DuckDBInstance.create(connectionString);
     } catch {
-      console.error("Failed to create DuckDB instance:", "Connection failed");
       throw new Error("Database connection failed");
     }
   }
@@ -31,13 +30,11 @@ function rateLimit(): boolean {
   const now = Date.now();
 
   if (now - windowStart >= RATE_LIMIT_WINDOW) {
-    console.log("Rate limit window reset");
     requestCount = 0;
     windowStart = now;
   }
 
   if (requestCount >= RATE_LIMIT_MAX) {
-    console.log("Rate limit exceeded!");
     return false;
   }
 
@@ -124,7 +121,6 @@ export async function POST(request: NextRequest) {
       { headers: corsHeaders },
     );
   } catch {
-    console.error("Request Failed");
 
     return NextResponse.json(
       { success: false, message: "Request Failed" },

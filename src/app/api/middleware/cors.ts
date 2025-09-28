@@ -2,7 +2,7 @@ export function corsHeaders(origin: string | null): Record<string, string> {
   const allowedOrigins = [
     "https://datawatchman.dev",
     "https://www.datawatchman.dev",
-    process.env.NODE_ENV === "development" ? "http://localhost:3000" : "",
+    process.env.ALLOW_LOCALHOST === "true" ? "http://localhost:3000" : "",
   ].filter(Boolean);
 
   const isAllowed = !origin || allowedOrigins.includes(origin);
@@ -27,17 +27,19 @@ export function handleCors(request: Request): Record<string, string> {
 export function validateOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
 
-  const allowedOrigins = [
-    "https://datawatchman.dev",
-    "https://www.datawatchman.dev",
-    process.env.NODE_ENV === "development" ? "http://localhost:3000" : "",
-  ].filter(Boolean);
-
-  // Only allow requests from explicitly allowed origins!
-  if (origin && allowedOrigins.includes(origin)) {
+  if (!origin && process.env.ALLOW_LOCALHOST === "true") {
     return true;
   }
 
-  // Block everything else (including requests with no origin) :D
-  return false;
+  if (!origin) {
+    return false;
+  }
+
+  const allowedOrigins = [
+    "https://datawatchman.dev",
+    "https://www.datawatchman.dev",
+    process.env.ALLOW_LOCALHOST === "true" ? "http://localhost:3000" : "",
+  ].filter(Boolean);
+
+  return allowedOrigins.includes(origin);
 }

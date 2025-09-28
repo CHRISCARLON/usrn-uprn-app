@@ -102,11 +102,14 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
     formData.description.trim() !== "";
 
   return (
-    <section className="border-2 border-slate-300 bg-white shadow-lg rounded-sm">
-      <div className="bg-slate-700 text-white p-6">
-        <h2 className="text-xl font-bold tracking-wide text-white">
+    <section className="border-2 border-gray-800 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="bg-gray-100 px-6 py-4 border-b border-gray-300">
+        <h2 className="text-lg font-semibold text-gray-900">
           Submit a Report
         </h2>
+        <p className="text-sm text-gray-700">
+          Help us identify datasets that should include location identifiers but currently don&apos;t.
+        </p>
       </div>
 
       <div className="p-8 bg-white">
@@ -325,10 +328,10 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
             <button
               type="submit"
               disabled={!isFormValid || isSubmitting}
-              className={`px-6 py-3 text-sm font-bold uppercase tracking-wide border-2 transition-all duration-200 shadow-sm hover:shadow-md text-white disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`px-6 py-3 text-sm font-medium border-2 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
                 isFormValid && !isSubmitting
-                  ? "bg-green-600 border-green-600 hover:bg-green-700 hover:border-green-700"
-                  : "bg-slate-700 border-slate-700 hover:bg-slate-800 hover:border-slate-800"
+                  ? "bg-white text-gray-700 border-gray-600 hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  : "bg-gray-100 text-gray-400 border-gray-300"
               }`}
             >
               {isSubmitting ? "Submitting..." : "Submit Report"}

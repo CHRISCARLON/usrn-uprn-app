@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleCors, validateOrigin } from "../middleware/cors";
 
+let requestCount = 0;
+let windowStart = Date.now();
+
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!) || 30;
+const RATE_LIMIT_WINDOW =
+  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 || 30 * 60 * 1000;
+
 interface InseeApiResponse {
   header: {
     statut: number;
@@ -100,15 +107,12 @@ function extractStreetOnly(fullAddress: string): string {
 
 async function getAddressId(fullAddress: string): Promise<string | null> {
   try {
-    console.log("Getting address ID for:", fullAddress);
 
     const streetOnly = extractStreetOnly(fullAddress);
-    console.log("Extracted street:", streetOnly);
 
     const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(
       streetOnly
     )}&limit=1`;
-    console.log(url);
 
     const response = await fetch(url, {
       headers: {
@@ -117,14 +121,12 @@ async function getAddressId(fullAddress: string): Promise<string | null> {
     });
 
     if (!response.ok) {
-      console.error("BAN API error:", response.status);
       return null;
     }
 
     const data = (await response.json()) as BanApiResponse;
 
     if (!data.features || data.features.length === 0) {
-      console.log("No street found in BAN API, trying original address");
 
       const fallbackUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(
         fullAddress
@@ -142,13 +144,27 @@ async function getAddressId(fullAddress: string): Promise<string | null> {
     }
 
     const feature = data.features[0];
-    console.log("BAN API result:", feature.properties);
 
     return feature.properties.id;
   } catch (error) {
-    console.error("Error getting address ID:", error);
     return null;
   }
+}
+
+function rateLimit(): boolean {
+  const now = Date.now();
+
+  if (now - windowStart >= RATE_LIMIT_WINDOW) {
+    requestCount = 0;
+    windowStart = now;
+  }
+
+  if (requestCount >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  requestCount++;
+  return true;
 }
 
 export async function OPTIONS(request: NextRequest) {
@@ -162,8 +178,16 @@ export async function GET(request: NextRequest) {
   // Validate origin for non-OPTIONS requests
   if (!validateOrigin(request)) {
     return NextResponse.json(
-      { error: "Forbidden: Invalid origin" },
+      { error: "Request Failed" },
       { status: 403 }
+    );
+  }
+
+  // Check rate limit
+  if (!rateLimit()) {
+    return NextResponse.json(
+      { error: "Service temporarily unavailable" },
+      { status: 429, headers: corsHeaders }
     );
   }
 
@@ -183,7 +207,6 @@ export async function GET(request: NextRequest) {
 
     // First get the proper address ID from BAN API
     const addressId = await getAddressId(address);
-    console.log(addressId);
 
     if (!addressId) {
       return NextResponse.json(
@@ -205,15 +228,11 @@ export async function GET(request: NextRequest) {
 
     const url = `https://api.insee.fr/api-sirene/3.11/siret?q=${query}&nombre=100`;
 
-    console.log("Using BAN address ID:", addressId);
-    console.log("Formatted for INSEE:", formattedId);
-    console.log("INSEE API URL:", url);
 
     // Note: This requires an INSEE API key to be set
     const apiKey = process.env.INSEE_API_KEY;
 
     if (!apiKey) {
-      console.log("INSEE API key not configured");
       // For demo purposes, return mock data if no API key
       return NextResponse.json(
         {
@@ -226,10 +245,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(
-      "Making request to INSEE API with key:",
-      apiKey ? "***configured***" : "missing"
-    );
 
     const response = await fetch(url, {
       headers: {
@@ -241,7 +256,6 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.log(`INSEE API status ${response.status}:`, errorText);
 
       // Handle 404 as "no companies found" (normal for streets without businesses)
       if (response.status === 404) {
@@ -268,7 +282,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = (await response.json()) as InseeApiResponse;
-    console.log("INSEE API response:", data);
 
     const total = data.header?.total || 0;
 
@@ -304,11 +317,10 @@ export async function GET(request: NextRequest) {
       { headers: corsHeaders }
     );
   } catch (error) {
-    console.error("Companies search error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "Request Failed",
       },
       { status: 500, headers: corsHeaders }
     );

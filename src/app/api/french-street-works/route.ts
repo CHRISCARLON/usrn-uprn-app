@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleCors, validateOrigin } from "../middleware/cors";
 
+let requestCount = 0;
+let windowStart = Date.now();
+
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!) || 30;
+const RATE_LIMIT_WINDOW =
+  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 || 30 * 60 * 1000;
+
 interface FrenchStreetWorksGeoPoint {
   lon: number;
   lat: number;
@@ -40,6 +47,22 @@ interface FrenchStreetWorksResponse {
 const PARIS_API_BASE_URL =
   "https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/chantiers-a-paris/records";
 
+function rateLimit(): boolean {
+  const now = Date.now();
+
+  if (now - windowStart >= RATE_LIMIT_WINDOW) {
+    requestCount = 0;
+    windowStart = now;
+  }
+
+  if (requestCount >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  requestCount++;
+  return true;
+}
+
 export async function OPTIONS(request: NextRequest) {
   const corsHeaders = handleCors(request);
   return new NextResponse(null, { status: 200, headers: corsHeaders });
@@ -51,8 +74,16 @@ export async function GET(request: NextRequest) {
   // Validate origin for non-OPTIONS requests
   if (!validateOrigin(request)) {
     return NextResponse.json(
-      { error: "Forbidden: Invalid origin" },
+      { error: "Request Failed" },
       { status: 403 }
+    );
+  }
+
+  // Check rate limit
+  if (!rateLimit()) {
+    return NextResponse.json(
+      { error: "Service temporarily unavailable" },
+      { status: 429, headers: corsHeaders }
     );
   }
 
@@ -105,7 +136,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      throw new Error(`Paris API returned ${response.status}`);
+      throw new Error("External service error");
     }
 
     const data: FrenchStreetWorksResponse = await response.json();
@@ -135,18 +166,15 @@ export async function GET(request: NextRequest) {
         count: data.results.length,
         data: formattedResults,
       },
-      { headers: corsHeaders },
+      { headers: corsHeaders }
     );
   } catch (error) {
-    console.error("Failed to fetch French street works data:", error);
-
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch street works data",
-        error: error instanceof Error ? error.message : "Unknown error",
+        message: "Request Failed",
       },
-      { status: 500, headers: corsHeaders },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
