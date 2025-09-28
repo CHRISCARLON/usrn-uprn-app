@@ -45,12 +45,13 @@ function rateLimit(): boolean {
   return true;
 }
 
+export async function OPTIONS(request: NextRequest) {
+  const corsHeaders = handleCors(request);
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
+
 export async function POST(request: NextRequest) {
   const corsHeaders = handleCors(request);
-
-  if (request.method === "OPTIONS") {
-    return new NextResponse(null, { status: 200, headers: corsHeaders });
-  }
 
   if (!validateOrigin(request)) {
     return NextResponse.json(

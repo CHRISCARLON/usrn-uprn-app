@@ -72,24 +72,13 @@ function rateLimit(): boolean {
   return true;
 }
 
-export async function GET(request: NextRequest) {
+export async function OPTIONS(request: NextRequest) {
   const corsHeaders = handleCors(request);
-
-  if (request.method === "OPTIONS") {
-    return new NextResponse(null, { status: 200, headers: corsHeaders });
-  }
-
-  // No origin validation for GET - just rate limit status
-  const status = getRateLimitStatus();
-  return NextResponse.json(status, { headers: corsHeaders });
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
 }
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   const corsHeaders = handleCors(request);
-
-  if (request.method === "OPTIONS") {
-    return new NextResponse(null, { status: 200, headers: corsHeaders });
-  }
 
   if (process.env.DISABLE_USRN_SEARCH === 'true') {
     return NextResponse.json(
@@ -115,21 +104,30 @@ export async function POST(request: NextRequest) {
     );
   }
   try {
-    const body = await request.json();
+    const { searchParams } = new URL(request.url);
+    const usrn = searchParams.get('usrn');
 
-    const validationResult = usrnSchema.safeParse(body);
-
-    if (!validationResult.success) {
+    if (!usrn) {
       return NextResponse.json(
         {
           success: false,
-          message: "Request Failed",
+          message: "USRN parameter is required",
         },
         { status: 400 },
       );
     }
 
-    const { usrn } = validationResult.data;
+    const validationResult = usrnSchema.safeParse({ usrn });
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid USRN format",
+        },
+        { status: 400 },
+      );
+    }
 
     const instance = await getDuckDBInstance();
     const connection = await instance.connect();

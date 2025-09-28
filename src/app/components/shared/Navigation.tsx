@@ -41,6 +41,16 @@ export default function Navigation({
           >
             BDUK Lookup
           </button>
+          <button
+            onClick={() => onViewChange("streetworks")}
+            className={`text-sm font-medium transition-colors ${
+              currentView === "streetworks"
+                ? "text-blue-600 border-b-2 border-blue-600 pb-1"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Paris Street Works
+          </button>
         </nav>
       </div>
     </div>

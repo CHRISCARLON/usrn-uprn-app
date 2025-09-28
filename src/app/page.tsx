@@ -8,6 +8,7 @@ import USRNLookup from "./components/lookup/USRNLookup";
 import InfoCard from "./components/report/InfoCard";
 import SubmissionForm from "./components/report/SubmissionForm";
 import InfoCard2 from "./components/report/InfoCard2";
+import FrenchStreetWorks from "./components/streetworks/FrenchStreetWorks";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState("home");
@@ -58,6 +59,9 @@ export default function Home() {
       case "lookup":
         return <USRNLookup />;
 
+      case "streetworks":
+        return <FrenchStreetWorks />;
+
       default:
         return <HomePage onNavigate={setCurrentView} />;
     }
@@ -103,17 +107,21 @@ export default function Home() {
       <Header
         title={
           currentView === "lookup"
-            ? "BDUK Connectivity Lookup"
+            ? "BDUK Connectivity Lookup 🛜"
             : currentView === "report"
-              ? "404: USRN and/or UPRN Not Found"
-              : "Data Watchman Data Hub"
+              ? "404: USRN and/or UPRN Not Found 🤷‍♂️"
+              : currentView === "streetworks"
+                ? "Paris Street Works Data 🇫🇷"
+                : "Data Watchman Data Hub"
         }
         subtitle={
           currentView === "lookup"
             ? "Retrieve BDUK premises and broadband gigabit availability data at USRN level. "
             : currentView === "report"
               ? "Report datasets that are missing USRNs and/or UPRNs."
-              : "An ensemble of mini tools that showcase interesting things with open data. "
+              : currentView === "streetworks"
+                ? "Access real-time street works data from Paris Open Data portal."
+                : "An ensemble of mini tools that showcase interesting things with open data. "
         }
       />
 

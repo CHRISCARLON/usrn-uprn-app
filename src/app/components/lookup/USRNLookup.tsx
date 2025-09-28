@@ -110,12 +110,9 @@ export default function USRNLookup() {
       };
 
 
-      const response = await fetch("/api/usrn-lookup", {
-        method: "POST",
+      const response = await fetch(`/api/usrn-lookup?usrn=${encodeURIComponent(validatedData.usrn)}`, {
+        method: "GET",
         headers,
-        body: JSON.stringify({
-          usrn: validatedData.usrn,
-        }),
       });
 
       if (!response.ok) {
