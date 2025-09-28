@@ -105,13 +105,14 @@ export default function Home() {
       </div>
 
       <Header
+        key={currentView}
         title={
           currentView === "lookup"
-            ? "BDUK Connectivity 🛜"
+            ? "BDUK Connectivity"
             : currentView === "report"
-            ? "404: USRN and/or UPRN Not Found 🤷‍♂️"
+            ? "404: USRN and/or UPRN Not Found"
             : currentView === "streetworks"
-            ? "Paris Street Works Data 🇫🇷"
+            ? "Paris Street Works Data"
             : "Data Watchman Data Hub"
         }
         subtitle={
