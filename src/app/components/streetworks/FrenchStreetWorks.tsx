@@ -157,7 +157,8 @@ export default function FrenchStreetWorks() {
             Paris Street Works
           </h2>
           <p className="text-sm text-gray-700">
-            Live street works data from the Paris open data portal. Displaying a sample of 50 records.
+            Live street works data from the Paris open data portal. Displaying a
+            sample of 50 records.
           </p>
         </div>
 
@@ -325,7 +326,7 @@ export default function FrenchStreetWorks() {
                         >
                           {loadingCompanies
                             ? "Loading..."
-                            : "Find Companies on This Street"}
+                            : "Find Companies on this Street"}
                         </button>
                       </div>
                     )}
@@ -370,8 +371,13 @@ export default function FrenchStreetWorks() {
             Data Attribution & Licensing
           </h4>
           <div className="space-y-1 text-xs text-gray-600">
-            <p>• SIRENE® data from INSEE, ODbL license. Data provided by INSEE and available on data.gouv.fr.</p>
-            <p>• Source: Base Adresse Nationale (BAN), Licence Ouverte Etalab 2.0</p>
+            <p>
+              • SIRENE® data from INSEE, ODbL license. Data provided by INSEE
+              and available on data.gouv.fr.
+            </p>
+            <p>
+              • Source: Base Adresse Nationale (BAN), Licence Ouverte Etalab 2.0
+            </p>
             <p>• Source: IGN, Licence Ouverte Etalab 2.0</p>
           </div>
         </div>

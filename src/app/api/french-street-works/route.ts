@@ -6,7 +6,8 @@ let windowStart = Date.now();
 
 const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!) || 30;
 const RATE_LIMIT_WINDOW =
-  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 || 30 * 60 * 1000;
+  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 ||
+  30 * 60 * 1000;
 
 interface FrenchStreetWorksGeoPoint {
   lon: number;
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
   if (!validateOrigin(request)) {
     return NextResponse.json(
       { error: "Request Failed" },
-      { status: 403 }
+      { status: 403, headers: corsHeaders }
     );
   }
 
@@ -92,18 +93,39 @@ export async function GET(request: NextRequest) {
 
     const queryParams = new URLSearchParams();
 
-    const limit = searchParams.get("limit") || "100";
-    queryParams.append("limit", limit);
+    const limitRaw = searchParams.get("limit") || "100";
+    const limitNum = parseInt(limitRaw);
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      return NextResponse.json(
+        { error: "Invalid parameters" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+    queryParams.append("limit", limitNum.toString());
 
     const offset = searchParams.get("offset");
     if (offset) {
-      queryParams.append("offset", offset);
+      const offsetNum = parseInt(offset);
+      if (isNaN(offsetNum) || offsetNum < 0) {
+        return NextResponse.json(
+          { error: "Invalid parameters" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+      queryParams.append("offset", offsetNum.toString());
     }
 
     const whereConditions: string[] = [];
 
+    // Validate arrondissement (Paris has 20 arrondissements, formatted as 75001-75020)
     const arrondissement = searchParams.get("arrondissement");
     if (arrondissement) {
+      if (!/^750(0[1-9]|1[0-9]|20)$/.test(arrondissement)) {
+        return NextResponse.json(
+          { error: "Invalid parameters" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
       whereConditions.push(`cp_arrondissement="${arrondissement}"`);
     }
 
@@ -111,10 +133,22 @@ export async function GET(request: NextRequest) {
     const dateFin = searchParams.get("dateFin");
 
     if (dateDebut) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateDebut)) {
+        return NextResponse.json(
+          { error: "Invalid parameters" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
       whereConditions.push(`date_debut>="${dateDebut}"`);
     }
 
     if (dateFin) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateFin)) {
+        return NextResponse.json(
+          { error: "Invalid parameters" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
       whereConditions.push(`date_fin<="${dateFin}"`);
     }
 
