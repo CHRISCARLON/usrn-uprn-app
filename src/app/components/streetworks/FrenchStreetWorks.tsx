@@ -371,14 +371,13 @@ export default function FrenchStreetWorks() {
             Data Attribution & Licensing
           </h4>
           <div className="space-y-1 text-xs text-gray-600">
-            <p>
-              • SIRENE® data from INSEE, ODbL license. Data provided by INSEE
-              and available on data.gouv.fr.
-            </p>
+            <p>• Source: SIRENE data from INSEE, Licence Ouverte Etalab 2.0.</p>
             <p>
               • Source: Base Adresse Nationale (BAN), Licence Ouverte Etalab 2.0
             </p>
-            <p>• Source: IGN, Licence Ouverte Etalab 2.0</p>
+            <p>
+              • Source: Paris Open Data, Licence ODbL (Open Database Licence)
+            </p>
           </div>
         </div>
       </div>
