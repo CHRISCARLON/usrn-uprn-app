@@ -112,7 +112,7 @@ export default function Home() {
             : currentView === "report"
             ? "404: USRN and/or UPRN Not Found"
             : currentView === "streetworks"
-            ? "Paris Street Works Data"
+            ? "Paris Street Works"
             : "Data Watchman Data Hub"
         }
         subtitle={
@@ -121,7 +121,7 @@ export default function Home() {
             : currentView === "report"
             ? "Report datasets that are missing USRNs and/or UPRNs."
             : currentView === "streetworks"
-            ? "Access real-time street works data from Paris Open data portal."
+            ? "Access real-time street works data from the Paris Open data portal."
             : "An ensemble of mini tools that showcase interesting things with open data. "
         }
       />
