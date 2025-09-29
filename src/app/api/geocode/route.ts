@@ -66,7 +66,8 @@ async function reverseGeocode(lat: number, lon: number) {
       success: false,
       error: "Address not found",
     };
-  } catch (error) {
+  } catch {
+    console.error("[Geocode Error]");
     return {
       success: false,
       error: "Request Failed",
@@ -146,7 +147,8 @@ export async function GET(request: NextRequest) {
     const result = await reverseGeocode(latitude, longitude);
 
     return NextResponse.json(result, { headers: corsHeaders });
-  } catch (error) {
+  } catch {
+    console.error("[Geocode API Error]");
     return NextResponse.json(
       {
         success: false,

@@ -6,7 +6,8 @@ let windowStart = Date.now();
 
 const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!) || 30;
 const RATE_LIMIT_WINDOW =
-  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 || 30 * 60 * 1000;
+  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 ||
+  30 * 60 * 1000;
 
 interface InseeApiResponse {
   header: {
@@ -107,7 +108,6 @@ function extractStreetOnly(fullAddress: string): string {
 
 async function getAddressId(fullAddress: string): Promise<string | null> {
   try {
-
     const streetOnly = extractStreetOnly(fullAddress);
 
     const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(
@@ -127,7 +127,6 @@ async function getAddressId(fullAddress: string): Promise<string | null> {
     const data = (await response.json()) as BanApiResponse;
 
     if (!data.features || data.features.length === 0) {
-
       const fallbackUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(
         fullAddress
       )}&limit=1`;
@@ -146,7 +145,8 @@ async function getAddressId(fullAddress: string): Promise<string | null> {
     const feature = data.features[0];
 
     return feature.properties.id;
-  } catch (error) {
+  } catch {
+    console.error("[Address ID Lookup Error]");
     return null;
   }
 }
@@ -177,10 +177,7 @@ export async function GET(request: NextRequest) {
 
   // Validate origin for non-OPTIONS requests
   if (!validateOrigin(request)) {
-    return NextResponse.json(
-      { error: "Request Failed" },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Request Failed" }, { status: 403 });
   }
 
   // Check rate limit
@@ -228,12 +225,9 @@ export async function GET(request: NextRequest) {
 
     const url = `https://api.insee.fr/api-sirene/3.11/siret?q=${query}&nombre=100`;
 
-
-    // Note: This requires an INSEE API key to be set
     const apiKey = process.env.INSEE_API_KEY;
 
     if (!apiKey) {
-      // For demo purposes, return mock data if no API key
       return NextResponse.json(
         {
           success: true,
@@ -244,7 +238,6 @@ export async function GET(request: NextRequest) {
         { headers: corsHeaders }
       );
     }
-
 
     const response = await fetch(url, {
       headers: {
@@ -271,11 +264,13 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // Log details server-side only
+      console.error("[INSEE API Error]", { status: response.status, details: errorText });
+
       return NextResponse.json(
         {
           success: false,
-          error: `INSEE API request failed with status: ${response.status}`,
-          details: errorText,
+          error: "Request Failed",
         },
         { status: 500, headers: corsHeaders }
       );
@@ -316,7 +311,8 @@ export async function GET(request: NextRequest) {
       },
       { headers: corsHeaders }
     );
-  } catch (error) {
+  } catch {
+    console.error("[Companies API Error]");
     return NextResponse.json(
       {
         success: false,

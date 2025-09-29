@@ -45,8 +45,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
           }
         `}
       </style>
-      <header className="border-b-2 border-gray-800 bg-white shadow-[0px_3px_0px_0px_rgba(0,0,0,1)]">
-        <div className="max-w-5xl mx-auto px-6 py-12">
+      <header className=" bg-white shadow-[0px_3px_0px_0px_rgba(0,0,0,1)]">
+        <div className="max-w-5xl mx-auto py-12">
           <h1 className="text-xl md:text-3xl font-black tracking-tight mb-6">
             <span className="animated-title">{title}</span>
           </h1>

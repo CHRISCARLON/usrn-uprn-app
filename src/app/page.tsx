@@ -128,7 +128,9 @@ export default function Home() {
 
       <Navigation currentView={currentView} onViewChange={setCurrentView} />
 
-      <main className="max-w-5xl mx-auto px-6 py-16">{renderContent()}</main>
+      <div className="py-6">
+        <main className="max-w-5xl mx-auto">{renderContent()}</main>
+      </div>
     </div>
   );
 }

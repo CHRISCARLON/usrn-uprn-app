@@ -4,7 +4,7 @@ interface HomePageProps {
 
 export default function HomePage({ onNavigate }: HomePageProps) {
   return (
-    <div className="max-w-4xl mx-auto py-6">
+    <div className="max-w-5xl mx-auto">
       <div className="grid md:grid-cols-3 gap-8">
         <div className="bg-white border-2 border-gray-800 p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">

@@ -168,7 +168,8 @@ export async function GET(request: NextRequest) {
       },
       { headers: corsHeaders }
     );
-  } catch (error) {
+  } catch {
+    console.error("[French Street Works Error]");
     return NextResponse.json(
       {
         success: false,

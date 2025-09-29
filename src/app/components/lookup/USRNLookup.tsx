@@ -481,59 +481,56 @@ export default function USRNLookup() {
                 </div>
               )}
 
-              {/* License Information */}
-              <div className="bg-white border border-gray-300">
-                <div className="bg-gray-100 px-4 py-3 border-b border-gray-300">
-                  <h4 className="text-sm font-medium text-gray-700">
-                    Data Attribution & Licensing
-                  </h4>
-                </div>
-                <div className="p-4">
-                  <div className="space-y-2 text-xs text-gray-600">
-                    <p>
-                      Contains OS data © Crown copyright and database right{" "}
-                      {new Date().getFullYear()}
-                    </p>
-                    <p>
-                      •{" "}
-                      <a
-                        href="https://www.ordnancesurvey.co.uk/products/os-open-linked-identifiers"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        OS Open Linked Identifiers
-                      </a>{" "}
-                      (USRN to UPRN matching)
-                    </p>
-                    <p>
-                      •{" "}
-                      <a
-                        href="https://www.gov.uk/government/publications/january-2025-omr-and-premises-in-bduk-plans-england-and-wales/user-guide-and-technical-note-for-premises-in-bduk-plans"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        BDUK Data (January 2025)
-                      </a>{" "}
-                      (OMR and premises in BDUK plans)
-                    </p>
-                    <p>
-                      All data licensed under the{" "}
-                      <a
-                        href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Open Government Licence v3.0
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
+        </div>
+
+        {/* Data Attribution */}
+        <div className="border-t border-gray-300 bg-gray-50 px-6 py-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-2">
+            Data Attribution & Licensing
+          </h4>
+          <div className="space-y-1 text-xs text-gray-600">
+            <p>
+              Contains OS data © Crown copyright and database right{" "}
+              {new Date().getFullYear()}
+            </p>
+            <p>
+              •{" "}
+              <a
+                href="https://www.ordnancesurvey.co.uk/products/os-open-linked-identifiers"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                OS Open Linked Identifiers
+              </a>{" "}
+              (USRN to UPRN matching)
+            </p>
+            <p>
+              •{" "}
+              <a
+                href="https://www.gov.uk/government/publications/january-2025-omr-and-premises-in-bduk-plans-england-and-wales/user-guide-and-technical-note-for-premises-in-bduk-plans"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                BDUK Data (January 2025)
+              </a>{" "}
+              (OMR and premises in BDUK plans)
+            </p>
+            <p>
+              All data licensed under the{" "}
+              <a
+                href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                Open Government Licence v3.0
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

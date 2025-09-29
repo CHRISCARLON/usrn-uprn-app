@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
       { headers: corsHeaders },
     );
   } catch {
+    console.error("[Submissions Error]");
 
     return NextResponse.json(
       { success: false, message: "Request Failed" },

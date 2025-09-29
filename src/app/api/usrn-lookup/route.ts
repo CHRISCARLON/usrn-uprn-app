@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
   if (!validateOrigin(request)) {
     return NextResponse.json(
       { success: false, message: "Request Failed" },
-      { status: 403 }
+      { status: 403, headers: corsHeaders }
     );
   }
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         success: false,
         message: "Service temporarily unavailable",
       },
-      { status: 429 }
+      { status: 429, headers: corsHeaders }
     );
   }
   try {
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "USRN parameter is required",
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "Invalid USRN format",
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
             success: false,
             message: "Request Failed",
           },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -198,13 +198,14 @@ export async function POST(request: NextRequest) {
       connection.closeSync();
     }
   } catch {
+    console.error("[USRN Lookup Error]");
 
     return NextResponse.json(
       {
         success: false,
         message: "Request Failed",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

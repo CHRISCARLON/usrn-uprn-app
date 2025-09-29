@@ -8,14 +8,14 @@ export default function Navigation({
   onViewChange,
 }: NavigationProps) {
   return (
-    <div className="bg-white border-b border-gray-200">
-      <div className="max-w-5xl mx-auto px-6 py-4">
-        <nav className="flex space-x-8">
+    <div className="bg-white">
+      <div className="max-w-5xl mx-auto">
+        <nav className="flex space-x-8 border-2 border-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white p-4">
           <button
             onClick={() => onViewChange("home")}
             className={`text-sm font-medium transition-colors ${
               currentView === "home"
-                ? "text-blue-600 border-b-2 border-blue-600 pb-1"
+                ? "text-black border-b-2 border-black pb-1"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
@@ -25,7 +25,7 @@ export default function Navigation({
             onClick={() => onViewChange("report")}
             className={`text-sm font-medium transition-colors ${
               currentView === "report"
-                ? "text-blue-600 border-b-2 border-blue-600 pb-1"
+                ? "text-black border-b-2 border-black pb-1"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
@@ -35,7 +35,7 @@ export default function Navigation({
             onClick={() => onViewChange("lookup")}
             className={`text-sm font-medium transition-colors ${
               currentView === "lookup"
-                ? "text-blue-600 border-b-2 border-blue-600 pb-1"
+                ? "text-black border-b-2 border-black pb-1"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
@@ -45,7 +45,7 @@ export default function Navigation({
             onClick={() => onViewChange("streetworks")}
             className={`text-sm font-medium transition-colors ${
               currentView === "streetworks"
-                ? "text-blue-600 border-b-2 border-blue-600 pb-1"
+                ? "text-black border-b-2 border-black pb-1"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
