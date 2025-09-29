@@ -27,12 +27,9 @@ export function handleCors(request: Request): Record<string, string> {
 export function validateOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
 
-  if (!origin && process.env.ALLOW_LOCALHOST === "true") {
-    return true;
-  }
-
+  // Allow requests without origin header (same-origin requests)
   if (!origin) {
-    return false;
+    return true;
   }
 
   const allowedOrigins = [
