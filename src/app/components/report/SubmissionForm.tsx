@@ -84,7 +84,7 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -104,11 +104,10 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
   return (
     <section className="border-2 border-gray-800 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
       <div className="bg-gray-100 px-6 py-4 border-b border-gray-300">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Submit a Report
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900">Submit a Report</h2>
         <p className="text-sm text-gray-700">
-          Help us identify datasets that should include location identifiers but currently don&apos;t.
+          Help us identify datasets that should include location identifiers but
+          currently don&apos;t.
         </p>
       </div>
 
@@ -116,10 +115,10 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
         {/* Success/Error Message */}
         {submitMessage && (
           <div
-            className={`mb-6 p-4 rounded-sm border-2 ${
+            className={`mb-6 p-4 rounded-sm ${
               submitMessage.type === "success"
-                ? "bg-green-50 border-green-200 text-green-800"
-                : "bg-red-50 border-red-200 text-red-800"
+                ? "text-green-700"
+                : "bg-red-50 border-2 border-red-200 text-red-800"
             }`}
           >
             <p className="font-semibold">{submitMessage.text}</p>
@@ -334,7 +333,31 @@ export default function SubmissionForm({ onSubmit }: SubmissionFormProps) {
                   : "bg-gray-100 text-gray-400 border-gray-300"
               }`}
             >
-              {isSubmitting ? "Submitting..." : "Submit Report"}
+              {isSubmitting ? (
+                <span className="flex items-center gap-1">
+                  Submitting
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  >
+                    .
+                  </span>
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  >
+                    .
+                  </span>
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  >
+                    .
+                  </span>
+                </span>
+              ) : (
+                "Submit Report"
+              )}
             </button>
           </div>
         </form>

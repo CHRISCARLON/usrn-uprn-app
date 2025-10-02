@@ -191,7 +191,31 @@ export default function USRNLookup() {
                   : "bg-white text-gray-700 border-gray-600 hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
               }`}
             >
-              {loading ? "Searching..." : "Look Up USRN"}
+              {loading ? (
+                <span className="flex items-center gap-1">
+                  Searching
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  >
+                    .
+                  </span>
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  >
+                    .
+                  </span>
+                  <span
+                    className="animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  >
+                    .
+                  </span>
+                </span>
+              ) : (
+                "Look Up USRN"
+              )}
             </button>
           </form>
 

@@ -81,6 +81,18 @@ export async function POST(request: NextRequest) {
       { status: 429, headers: corsHeaders }
     );
   }
+
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength) > 100 * 1024) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Payload too large",
+      },
+      { status: 413, headers: corsHeaders }
+    );
+  }
+
   try {
     const body = await request.json();
     const { usrn } = body;

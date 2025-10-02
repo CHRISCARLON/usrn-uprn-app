@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // First get the proper address ID from BAN API
+    // Get the proper address ID from BAN API
     const addressId = await getAddressId(address);
 
     if (!addressId) {
@@ -218,7 +218,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Format the ID by removing ALL underscores (like the working example: 51454_4070 -> 514544070)
+    // Format the ID by removing ALL underscores (like: 51454_4070 -> 514544070)
     const formattedId = addressId.replace(/_/g, "");
 
     // Use the formatted ID for INSEE search
@@ -267,8 +267,10 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Log details server-side only
-      console.error("[INSEE API Error]", { status: response.status, details: errorText });
+      console.error("[INSEE API Error]", {
+        status: response.status,
+        details: errorText,
+      });
 
       return NextResponse.json(
         {
