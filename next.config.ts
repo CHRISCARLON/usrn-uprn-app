@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Limit request body size to prevent DoS attacks
   experimental: {
     serverActions: {
-      bodySizeLimit: '100kb',
+      bodySizeLimit: "100kb",
     },
   },
   async headers() {
