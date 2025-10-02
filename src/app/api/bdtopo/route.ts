@@ -9,43 +9,76 @@ const RATE_LIMIT_WINDOW =
   parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 ||
   30 * 60 * 1000;
 
-interface InseeApiResponse {
-  header: {
-    statut: number;
-    message: string;
-    total: number;
-    debut: number;
-    nombre: number;
+interface BdTopoFeature {
+  type: string;
+  id: string;
+  geometry: {
+    type: string;
+    coordinates: number[][];
   };
-  etablissements: {
-    siren: string;
-    nic: string;
-    siret: string;
-    dateCreationEtablissement: string;
-    uniteLegale: {
-      denominationUniteLegale?: string;
-      nomUniteLegale?: string;
-      prenom1UniteLegale?: string;
-      activitePrincipaleUniteLegale?: string;
-    };
-    adresseEtablissement: {
-      numeroVoieEtablissement?: string;
-      typeVoieEtablissement?: string;
-      libelleVoieEtablissement?: string;
-      codePostalEtablissement?: string;
-      libelleCommuneEtablissement?: string;
-    };
-  }[];
+  geometry_name: string;
+  properties: {
+    cleabs: string;
+    nature: string;
+    nom_collaboratif_gauche: string;
+    nom_collaboratif_droite: string;
+    importance: string;
+    fictif: boolean;
+    position_par_rapport_au_sol: string;
+    etat_de_l_objet: string;
+    date_creation: string;
+    date_modification: string;
+    nombre_de_voies: number;
+    largeur_de_chaussee: number;
+    itineraire_vert: boolean;
+    prive: boolean;
+    sens_de_circulation: string;
+    reserve_aux_bus: string | null;
+    urbain: boolean;
+    vitesse_moyenne_vl: number;
+    acces_vehicule_leger: string;
+    acces_pieton: string | null;
+    restriction_de_hauteur: number | null;
+    restriction_de_poids_total: number | null;
+    restriction_de_poids_par_essieu: number | null;
+    restriction_de_largeur: number | null;
+    restriction_de_longueur: number | null;
+    matieres_dangereuses_interdites: boolean;
+    borne_debut_gauche: string;
+    borne_debut_droite: string;
+    borne_fin_gauche: string;
+    borne_fin_droite: string;
+    insee_commune_gauche: string;
+    insee_commune_droite: string;
+    alias_gauche: string | null;
+    alias_droit: string | null;
+    source_voie_ban_gauche: string;
+    source_voie_ban_droite: string;
+    nom_voie_ban_gauche: string;
+    nom_voie_ban_droite: string;
+    lieux_dits_ban_gauche: string;
+    lieux_dits_ban_droite: string;
+    identifiant_voie_ban_gauche: string;
+    identifiant_voie_ban_droite: string;
+    [key: string]: string | number | boolean | null | undefined;
+  };
+  bbox: number[];
 }
 
-interface SimplifiedCompany {
-  siret: string;
-  nom: string;
-  adresse: string;
-  codePostal: string;
-  ville: string;
-  activite: string;
-  dateCreation: string;
+interface BdTopoResponse {
+  type: string;
+  features: BdTopoFeature[];
+  totalFeatures: number;
+  numberMatched: number;
+  numberReturned: number;
+  timeStamp: string;
+  crs: {
+    type: string;
+    properties: {
+      name: string;
+    };
+  };
+  bbox: number[];
 }
 
 interface BanFeatureProperties {
@@ -85,12 +118,8 @@ interface BanApiResponse {
 }
 
 function extractStreetOnly(fullAddress: string): string {
-  // Remove house number to get just the street
-  // Example: "7 Rue de l'Armorique 75015 Paris" -> "Rue de l'Armorique 75015 Paris"
   const addressParts = fullAddress.split(",").map((p) => p.trim());
-
   const streetPart = addressParts[0] || fullAddress;
-
   const streetOnly = streetPart.replace(/^\d+\s+/, "").trim();
 
   const otherParts = addressParts.slice(1);
@@ -151,6 +180,36 @@ async function getAddressId(fullAddress: string): Promise<string | null> {
   }
 }
 
+async function fetchBdTopo(
+  identifiant: string,
+  side: "gauche" | "droit"
+): Promise<BdTopoResponse | null> {
+  try {
+    const field =
+      side === "gauche"
+        ? "identifiant_voie_ban_gauche"
+        : "identifiant_voie_ban_droite";
+    const url = `https://data.geopf.fr/wfs/ows?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:troncon_de_route&CQL_FILTER=${field}=%27${identifiant}%27&OUTPUTFORMAT=application/json`;
+
+    const response = await fetch(url, {
+      headers: {
+        accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`[BD TOPO ${side} Error]`, response.status);
+      return null;
+    }
+
+    const data = (await response.json()) as BdTopoResponse;
+    return data;
+  } catch {
+    console.error(`[BD TOPO ${side} Fetch Error]`);
+    return null;
+  }
+}
+
 function rateLimit(): boolean {
   const now = Date.now();
 
@@ -175,7 +234,6 @@ export async function OPTIONS(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const corsHeaders = handleCors(request);
 
-  // Validate origin for non-OPTIONS requests
   if (!validateOrigin(request)) {
     return NextResponse.json(
       { error: "Request Failed" },
@@ -183,7 +241,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Check rate limit
   if (!rateLimit()) {
     return NextResponse.json(
       { error: "Service temporarily unavailable" },
@@ -205,10 +262,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // First get the proper address ID from BAN API
-    const addressId = await getAddressId(address);
+    // Get the BAN ID from the address (but keep underscores for BD TOPO!)
+    const banId = await getAddressId(address);
 
-    if (!addressId) {
+    if (!banId) {
       return NextResponse.json(
         {
           success: false,
@@ -218,104 +275,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Format the ID by removing ALL underscores (like the working example: 51454_4070 -> 514544070)
-    const formattedId = addressId.replace(/_/g, "");
+    // Trim BAN ID to street level (remove house number suffix if present)
+    // Example: 75105_9517_00004_b -> 75105_9517
+    const trimmedBanId = banId.split("_").slice(0, 2).join("_");
 
-    // Use the formatted ID for INSEE search
-    const query = encodeURIComponent(
-      `identifiantAdresseEtablissement:${formattedId}_B AND periode(etatAdministratifEtablissement:A AND caractereEmployeurEtablissement: O)`
-    );
+    // Query BD TOPO for left side only (gauche)
+    // TODO: If I can figure out why this is so slowwww the maybe I'll do both left and right
+    const gaucheData = await fetchBdTopo(trimmedBanId, "gauche");
 
-    const url = `https://api.insee.fr/api-sirene/3.11/siret?q=${query}&nombre=100`;
-
-    const apiKey = process.env.INSEE_API_KEY;
-
-    if (!apiKey) {
-      return NextResponse.json(
-        {
-          success: true,
-          total: 0,
-          companies: [],
-          message: "INSEE API key not configured - returning empty results",
-        },
-        { headers: corsHeaders }
-      );
-    }
-
-    const response = await fetch(url, {
-      headers: {
-        accept: "application/json",
-        "X-INSEE-Api-Key-Integration": apiKey,
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-
-      // Handle 404 as "no companies found" (normal for streets without businesses)
-      if (response.status === 404) {
-        return NextResponse.json(
-          {
-            success: true,
-            total: 0,
-            companies: [],
-            message: "No companies found on this street",
-            searchedAddressId: formattedId,
-          },
-          { headers: corsHeaders }
-        );
-      }
-
-      // Log details server-side only
-      console.error("[INSEE API Error]", { status: response.status, details: errorText });
-
+    if (!gaucheData) {
       return NextResponse.json(
         {
           success: false,
-          error: "Request Failed",
+          error: "No BD TOPO data found",
         },
-        { status: 500, headers: corsHeaders }
+        { status: 404, headers: corsHeaders }
       );
     }
-
-    const data = (await response.json()) as InseeApiResponse;
-
-    const total = data.header?.total || 0;
-
-    const companies: SimplifiedCompany[] = (data.etablissements || []).map(
-      (etab) => ({
-        siret: etab.siret,
-        nom:
-          etab.uniteLegale?.denominationUniteLegale ||
-          `${etab.uniteLegale?.nomUniteLegale || ""} ${
-            etab.uniteLegale?.prenom1UniteLegale || ""
-          }`.trim(),
-        adresse: [
-          etab.adresseEtablissement?.numeroVoieEtablissement,
-          etab.adresseEtablissement?.typeVoieEtablissement,
-          etab.adresseEtablissement?.libelleVoieEtablissement,
-        ]
-          .filter(Boolean)
-          .join(" "),
-        codePostal: etab.adresseEtablissement?.codePostalEtablissement || "",
-        ville: etab.adresseEtablissement?.libelleCommuneEtablissement || "",
-        activite: etab.uniteLegale?.activitePrincipaleUniteLegale || "",
-        dateCreation: etab.dateCreationEtablissement,
-      })
-    );
 
     return NextResponse.json(
       {
         success: true,
-        total,
-        companies,
-        searchedAddressId: formattedId,
+        banId: trimmedBanId,
+        totalFeatures: gaucheData.numberReturned || 0,
+        features: gaucheData.features || [],
       },
       { headers: corsHeaders }
     );
   } catch {
-    console.error("[Companies API Error]");
+    console.error("[BD TOPO API Error]");
     return NextResponse.json(
       {
         success: false,

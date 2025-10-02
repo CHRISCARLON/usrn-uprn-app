@@ -6,9 +6,10 @@ import { handleCors, validateOrigin } from "../middleware/cors";
 let requestCount = 0;
 let windowStart = Date.now();
 
-const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!);
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!) || 30;
 const RATE_LIMIT_WINDOW =
-  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000;
+  parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES!) * 60 * 1000 ||
+  30 * 60 * 1000;
 
 interface PostcodeGroup {
   postcode: string;
@@ -19,10 +20,16 @@ interface PostcodeGroup {
 
 async function getDuckDBInstance() {
   process.env.HOME = "/tmp";
+
+  if (!process.env.MOTHERDUCK_DB_2 || !process.env.MOTHERDUCK_TOKEN) {
+    throw new Error("Database configuration missing");
+  }
+
   try {
     const connectionString = `md:${process.env.MOTHERDUCK_DB_2}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
     return await DuckDBInstance.fromCache(connectionString);
   } catch {
+    console.error("[Database Connection Error]");
     throw new Error("Database connection failed");
   }
 }
@@ -100,12 +107,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const bdukTable = process.env.BDUK_TABLE;
+    if (!bdukTable || !/^[a-zA-Z0-9_\.]+$/.test(bdukTable)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Service configuration error",
+        },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
     const instance = await getDuckDBInstance();
     const connection = await instance.connect();
 
-    const bdukTable = process.env.BDUK_TABLE;
     try {
-      // Query to get BDUK premises data for the given USRN
       const result = await connection.runAndReadAll(
         `
         SELECT

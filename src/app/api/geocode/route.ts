@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
   if (!validateOrigin(request)) {
     return NextResponse.json(
       { error: "Request Failed" },
-      { status: 403 }
+      { status: 403, headers: corsHeaders }
     );
   }
 

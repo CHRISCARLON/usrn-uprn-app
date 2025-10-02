@@ -5,7 +5,6 @@ import { handleCors, validateOrigin } from "../middleware/cors";
 
 let requestCount = 0;
 let windowStart = Date.now();
-let cachedInstance: DuckDBInstance | null = null;
 
 const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX!) || 30;
 const RATE_LIMIT_WINDOW =
@@ -13,17 +12,19 @@ const RATE_LIMIT_WINDOW =
   30 * 60 * 1000;
 
 async function getDuckDBInstance() {
-  if (!cachedInstance) {
-    process.env.HOME = "/tmp";
+  process.env.HOME = "/tmp";
 
-    try {
-      const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
-      cachedInstance = await DuckDBInstance.create(connectionString);
-    } catch {
-      throw new Error("Database connection failed");
-    }
+  if (!process.env.MOTHERDUCK_DB || !process.env.MOTHERDUCK_TOKEN) {
+    throw new Error("Database configuration missing");
   }
-  return cachedInstance;
+
+  try {
+    const connectionString = `md:${process.env.MOTHERDUCK_DB}?motherduck_token=${process.env.MOTHERDUCK_TOKEN}`;
+    return await DuckDBInstance.fromCache(connectionString);
+  } catch {
+    console.error("[Database Connection Error]");
+    throw new Error("Database connection failed");
+  }
 }
 
 function rateLimit(): boolean {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
         success: false,
         message: "Request Failed",
       },
-      { status: 403 },
+      { status: 403, headers: corsHeaders }
     );
   }
 
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
         success: false,
         message: "Request Failed",
       },
-      { status: 400 },
+      { status: 429, headers: corsHeaders }
     );
   }
 
@@ -80,52 +81,62 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "Request Failed",
         },
-        { status: 400 },
+        { status: 400, headers: corsHeaders }
       );
     }
 
     const formData = validationResult.data;
 
-    const instance = await getDuckDBInstance();
+    const submissionsTable = process.env.SUBMISSIONS_TABLE;
+    if (!submissionsTable || !/^[a-zA-Z0-9_\.]+$/.test(submissionsTable)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Service configuration error",
+        },
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
+    const instance = await getDuckDBInstance();
     const connection = await instance.connect();
 
-    const submissionsTable = process.env.SUBMISSIONS_TABLE;
+    try {
+      await connection.run(
+        `
+        INSERT INTO ${submissionsTable} (
+          dataset_name, dataset_url, dataset_owner, owner_name,
+          description, missing_type, job_title, sector
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+        [
+          formData.datasetName,
+          formData.datasetUrl,
+          formData.datasetOwner,
+          formData.ownerName,
+          formData.description,
+          formData.missingType.toLowerCase(),
+          formData.jobTitle || null,
+          formData.sector,
+        ]
+      );
 
-    await connection.run(
-      `
-      INSERT INTO ${submissionsTable} (
-        dataset_name, dataset_url, dataset_owner, owner_name,
-        description, missing_type, job_title, sector
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-      [
-        formData.datasetName,
-        formData.datasetUrl,
-        formData.datasetOwner,
-        formData.ownerName,
-        formData.description,
-        formData.missingType.toLowerCase(),
-        formData.jobTitle || null,
-        formData.sector,
-      ],
-    );
-
-    connection.closeSync();
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Request completed",
-      },
-      { headers: corsHeaders },
-    );
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Request completed",
+        },
+        { headers: corsHeaders }
+      );
+    } finally {
+      connection.closeSync();
+    }
   } catch {
     console.error("[Submissions Error]");
 
     return NextResponse.json(
       { success: false, message: "Request Failed" },
-      { status: 500 },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
