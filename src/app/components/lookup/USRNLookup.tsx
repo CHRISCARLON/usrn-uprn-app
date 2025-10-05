@@ -504,7 +504,6 @@ export default function USRNLookup() {
                   </div>
                 </div>
               )}
-
             </div>
           )}
         </div>
@@ -534,12 +533,12 @@ export default function USRNLookup() {
             <p>
               •{" "}
               <a
-                href="https://www.gov.uk/government/publications/january-2025-omr-and-premises-in-bduk-plans-england-and-wales/user-guide-and-technical-note-for-premises-in-bduk-plans"
+                href="https://www.gov.uk/government/publications/may-2025-omr-and-premises-in-bduk-plans-england-and-wales"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                BDUK Data (January 2025)
+                BDUK Data (May 2025)
               </a>{" "}
               (OMR and premises in BDUK plans)
             </p>
